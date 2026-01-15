@@ -28,3 +28,14 @@ function user_update_password(PDO $pdo, int $userId, string $hash): void {
   $st = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
   $st->execute([$hash, $userId]);
 }
+
+/* ---------- Customer Functions ---------- */
+function get_all_customers(PDO $pdo): array {
+  $st = $pdo->query("SELECT id, name, email, phone, address, created_at FROM users WHERE role = 'customer' ORDER BY created_at DESC");
+  return $st->fetchAll();
+}
+
+function get_customer_count(PDO $pdo): int {
+  $st = $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'customer'");
+  return (int)$st->fetchColumn();
+}
