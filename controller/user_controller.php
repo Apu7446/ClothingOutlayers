@@ -16,15 +16,28 @@ function user_register_view(PDO $pdo): void {
 function user_login_action(PDO $pdo): void {
   $email = trim((string)($_POST['email'] ?? ''));
   $password = (string)($_POST['password'] ?? '');
+  $selectedRole = trim((string)($_POST['role'] ?? ''));
 
-  if ($email === '' || $password === '') {
-    $_SESSION['flash'] = ['type' => 'error', 'message' => 'Email & password required.'];
+  if ($email === '' || $password === '' || $selectedRole === '') {
+    $_SESSION['flash'] = ['type' => 'error', 'message' => 'Role, Email & password required.'];
+    redirect('index.php?page=login');
+  }
+
+  // Validate selected role
+  if (!in_array($selectedRole, ['customer', 'admin', 'staff'])) {
+    $_SESSION['flash'] = ['type' => 'error', 'message' => 'Invalid role selected.'];
     redirect('index.php?page=login');
   }
 
   $u = user_find_by_email($pdo, $email);
   if (!$u) {
     $_SESSION['flash'] = ['type' => 'error', 'message' => 'Invalid login.'];
+    redirect('index.php?page=login');
+  }
+
+  // Check if selected role matches user's actual role
+  if ((string)$u['role'] !== $selectedRole) {
+    $_SESSION['flash'] = ['type' => 'error', 'message' => 'You are not authorized as ' . ucfirst($selectedRole) . '.'];
     redirect('index.php?page=login');
   }
 

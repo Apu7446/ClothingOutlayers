@@ -171,6 +171,61 @@ main.container {
   gap: 10px;
 }
 
+/* User Info Display */
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: 10px;
+}
+
+.user-name {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.user-role-badge {
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.role-customer {
+  background: #3b82f6;
+  color: white;
+}
+
+.role-admin {
+  background: var(--brand);
+  color: white;
+}
+
+.role-staff {
+  background: #22c55e;
+  color: white;
+}
+
+/* Form Select Styling */
+.form-select {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  color: var(--text);
+  font-size: 14px;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.form-select:focus {
+  outline: none;
+  border-color: var(--brand);
+}
+
 /* Cart Badge */
 .badge {
   background: var(--brand);

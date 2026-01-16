@@ -22,14 +22,39 @@ declare(strict_types=1);
       <a href="index.php?page=home#contact">Contact Us</a>
       <?php if (is_logged_in()): ?>
         <a href="index.php?page=cart">Cart <span class="badge"><?= (int)$cartCount ?></span></a>
-        <?php if (is_admin()): ?>
-          <a href="index.php?page=admin_dashboard">Admin</a>
-        <?php endif; ?>
       <?php endif; ?>
     </nav>
 
     <div class="nav-right">
       <?php if (is_logged_in()): ?>
+        <span class="user-info">
+          <?php 
+            $userName = htmlspecialchars($_SESSION['user']['name'] ?? '');
+            $userRole = $_SESSION['user']['role'] ?? 'customer';
+            $roleLabel = '';
+            $roleClass = '';
+            $dashboardLink = '';
+            
+            switch($userRole) {
+              case 'admin':
+                $roleLabel = 'Admin';
+                $roleClass = 'role-admin';
+                $dashboardLink = 'index.php?page=admin_dashboard';
+                break;
+              case 'staff':
+                $roleLabel = 'Staff';
+                $roleClass = 'role-staff';
+                $dashboardLink = 'index.php?page=staff_dashboard';
+                break;
+              default:
+                $roleLabel = 'Customer';
+                $roleClass = 'role-customer';
+                $dashboardLink = 'index.php?page=customer_dashboard';
+            }
+          ?>
+          <span class="user-name"><?= $userName ?></span>
+          <a href="<?= $dashboardLink ?>" class="user-role-badge <?= $roleClass ?>"><?= $roleLabel ?></a>
+        </span>
         <a href="index.php?page=logout" class="btn btn-outline">Logout</a>
       <?php else: ?>
         <a href="index.php?page=login" class="btn btn-outline">Login</a>

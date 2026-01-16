@@ -96,13 +96,7 @@ switch ($page) {
   case 'login':
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       user_login_action($pdo);
-      // Redirect based on role
-      $role = $_SESSION['user']['role'] ?? 'customer';
-      if ($role === 'admin') {
-        redirect('index.php?page=admin_dashboard');
-      } else {
-        redirect('index.php?page=home');
-      }
+      redirect('index.php?page=home');
     }
     user_login_view($pdo);
     break;

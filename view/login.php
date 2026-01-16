@@ -6,6 +6,16 @@
 
     <form method="post" action="index.php?page=login" class="form">
       <label>
+        Login As
+        <select name="role" required class="form-select">
+          <option value="">-- Select Role --</option>
+          <option value="customer">Customer</option>
+          <option value="admin">Admin</option>
+          <option value="staff">Staff</option>
+        </select>
+      </label>
+
+      <label>
         Email
         <input type="email" name="email" required />
       </label>
