@@ -171,13 +171,48 @@ switch ($page) {
     product_detail($pdo);
     break;
 
+  /* -------- AJAX Add to Cart -------- */
+  case 'cart_add_ajax':
+    header('Content-Type: application/json');
+    if (!is_logged_in()) {
+      echo json_encode(['success' => false, 'message' => 'Please login first']);
+      exit;
+    }
+    if (!is_customer()) {
+      echo json_encode(['success' => false, 'message' => 'Only customers can add to cart']);
+      exit;
+    }
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+      cart_add_action($pdo);
+      $count = cart_count($pdo);
+      echo json_encode(['success' => true, 'message' => 'Added to cart!', 'count' => $count]);
+    } else {
+      echo json_encode(['success' => false, 'message' => 'Invalid request']);
+    }
+    exit;
+
   case 'cart':
     require_login();
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $action = $_GET['action'] ?? '';
-      if ($action === 'add') cart_add_action($pdo);
-      if ($action === 'update') cart_update_action($pdo);
-      if ($action === 'remove') cart_remove_action($pdo);
+      
+      if ($action === 'add') {
+        $returnTo = $_POST['return_to'] ?? 'cart';
+        cart_add_action($pdo);
+        redirect('index.php?page=' . $returnTo);
+      }
+      if ($action === 'update') {
+        cart_update_action($pdo);
+        redirect('index.php?page=cart');
+      }
+      if ($action === 'remove') {
+        cart_remove_action($pdo);
+        redirect('index.php?page=cart');
+      }
+      if ($action === 'clear') {
+        cart_clear_action($pdo);
+        redirect('index.php?page=cart');
+      }
       redirect('index.php?page=cart');
     }
     cart_view($pdo);

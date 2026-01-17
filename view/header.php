@@ -15,7 +15,7 @@
 declare(strict_types=1);
 ?>
 <!doctype html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -85,7 +85,7 @@ declare(strict_types=1);
         
         <!-- Cart button - Only visible for customers (not admin/staff) -->
         <?php if (is_customer()): ?>
-          <a href="index.php?page=cart" class="btn btn-cart">🛒 Cart <span class="badge"><?= (int)$cartCount ?></span></a>
+          <a href="index.php?page=cart" class="cart-link">🛒 Cart <span class="cart-badge"><?= (int)$cartCount ?></span></a>
         <?php endif; ?>
         
         <!-- Logout button -->

@@ -51,7 +51,7 @@ require __DIR__ . '/header.php';
       ?>
       <div class="row">
         
-        <!-- Product Info: Image + Name -->
+        <!-- Product Info: Image + Name + Size/Color -->
         <div class="prod">
           <div class="thumb">
             <?php if (!empty($it['image'])): ?>
@@ -63,6 +63,10 @@ require __DIR__ . '/header.php';
           <div>
             <div><strong><?= htmlspecialchars((string)$it['name']) ?></strong></div>
             <div class="muted"><?= htmlspecialchars((string)($it['category'] ?? '')) ?></div>
+            <div class="cart-variant">
+              <span class="variant-badge">Size: <?= htmlspecialchars((string)($it['size'] ?? 'M')) ?></span>
+              <span class="variant-badge">Color: <?= htmlspecialchars((string)($it['color'] ?? 'Black')) ?></span>
+            </div>
           </div>
         </div>
 
@@ -95,7 +99,13 @@ require __DIR__ . '/header.php';
 
     <!-- Footer Row: Subtotal and Checkout -->
     <div class="row foot">
-      <div></div><div></div><div></div>
+      <div>
+        <!-- Remove All Button -->
+        <form method="post" action="index.php?page=cart&action=clear" onsubmit="return confirm('Remove all items from cart?');">
+          <button class="btn btn-danger" type="submit">🗑️ Remove All</button>
+        </form>
+      </div>
+      <div></div><div></div>
       <div><strong>Subtotal: ৳<?= number_format($subtotal, 2) ?></strong></div>
       <div><a class="btn" href="index.php?page=checkout">Checkout</a></div>
     </div>

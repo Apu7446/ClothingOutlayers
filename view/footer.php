@@ -28,6 +28,7 @@
 
 <!-- JavaScript file for theme toggle and other functionality -->
 <script src="js/script.js"></script>
+<script src="js/validation.js"></script>
 
 <!-- Close HTML structure -->
 </body>

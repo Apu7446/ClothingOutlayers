@@ -1,67 +1,46 @@
 /**
- * ========================================
- * MAIN JAVASCRIPT FILE
- * ========================================
- * This file handles client-side functionality:
- * - Theme toggle (Light/Dark mode)
- * 
- * Note: This project does NOT use AJAX.
- * All form submissions use traditional page reloads.
+ * OutLayers - Main JavaScript
+ * AJAX Add to Cart functionality
  */
+(function() {
+  'use strict';
 
-// IIFE (Immediately Invoked Function Expression)
-// Wraps code to avoid polluting global namespace
-(function () {
-  
-  // Get the root HTML element for setting data-theme attribute
-  const root = document.documentElement;
-  
-  // Get the theme toggle button (if it exists on the page)
-  const btn = document.getElementById('themeToggle');
-
-  /**
-   * Set the theme and save to localStorage
-   * @param {string} theme - 'light' or 'dark'
-   */
-  function setTheme(theme) {
-    // Set data-theme attribute on <html> element
-    // CSS uses this to apply different color variables
-    root.setAttribute('data-theme', theme);
-    
-    // Save preference to localStorage (persists after browser close)
-    localStorage.setItem('theme', theme);
-  }
-
-  /**
-   * Initialize theme on page load
-   * 1. Check localStorage for saved preference
-   * 2. If none, default to 'light'
-   * 3. Add click listener to toggle button
-   */
-  function init() {
-    // Check for saved theme preference
-    const saved = localStorage.getItem('theme');
-    
-    if (saved === 'dark' || saved === 'light') {
-      // Use saved preference
-      setTheme(saved);
-    } else {
-      // No preference saved - default to light theme
-      setTheme('light');
-    }
-
-    // Add click event listener to theme toggle button
-    if (btn) {
-      btn.addEventListener('click', function () {
-        // Get current theme
-        const current = root.getAttribute('data-theme') || 'light';
-        // Toggle to opposite theme
-        setTheme(current === 'light' ? 'dark' : 'light');
+  document.addEventListener('DOMContentLoaded', function() {
+    // AJAX Add to Cart
+    document.querySelectorAll('.ajax-cart-form').forEach(function(form) {
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        var btn = this.querySelector('button[type="submit"]');
+        var originalText = btn ? btn.innerHTML : '';
+        
+        if (btn) { btn.disabled = true; btn.innerHTML = '⏳'; }
+        
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', 'index.php?page=cart_add_ajax', true);
+        xhr.onload = function() {
+          if (xhr.status === 200) {
+            try {
+              var data = JSON.parse(xhr.responseText);
+              if (data.success) {
+                var badge = document.querySelector('.cart-badge');
+                if (badge) {
+                  badge.textContent = data.count;
+                  badge.style.transform = 'scale(1.3)';
+                  setTimeout(function() { badge.style.transform = 'scale(1)'; }, 300);
+                }
+              } else {
+                alert(data.message || 'Failed');
+              }
+            } catch (e) { alert('Error'); }
+          }
+          if (btn) { btn.innerHTML = originalText; btn.disabled = false; }
+        };
+        xhr.onerror = function() {
+          alert('Network error');
+          if (btn) { btn.innerHTML = originalText; btn.disabled = false; }
+        };
+        xhr.send(new FormData(this));
       });
-    }
-  }
-
-  // Run init() when DOM is fully loaded
-  document.addEventListener('DOMContentLoaded', init);
-  
+    });
+  });
 })();

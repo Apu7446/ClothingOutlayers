@@ -107,53 +107,35 @@ require __DIR__ . '/header.php';
             </a>
           </h3>
           
+          <!-- Size & Color Info -->
+          <div class="card-variant">
+            <span>Size: <?= htmlspecialchars((string)($p['size'] ?? 'M')) ?></span>
+            <span>Color: <?= htmlspecialchars((string)($p['color'] ?? 'Black')) ?></span>
+          </div>
+          
           <!-- Price and Stock Status -->
           <div class="card-price-row">
             <span class="card-price">৳<?= number_format((float)$p['price'], 0) ?></span>
             <span class="card-stock <?= $stockClass ?>"><?= $stockText ?></span>
           </div>
 
-          <!-- Add to Cart Form (only for logged in users) -->
-          <?php if (is_logged_in()): ?>
-            <form method="post" action="index.php?page=cart&action=add" class="product-form">
-              <input type="hidden" name="product_id" value="<?= (int)$p['id'] ?>" />
-              <input type="hidden" name="quantity" value="1" />
-              
-              <!-- Size and Color Selection -->
-              <div class="select-row">
-                <select name="size" class="select-sm" required>
-                  <option value="">Select Size</option>
-                  <option value="S">S</option>
-                  <option value="M">M</option>
-                  <option value="L">L</option>
-                  <option value="XL">XL</option>
-                  <option value="XXL">XXL</option>
-                </select>
-                <select name="color" class="select-sm" required>
-                  <option value="">Select Color</option>
-                  <option value="Black">Black</option>
-                  <option value="White">White</option>
-                  <option value="Red">Red</option>
-                  <option value="Blue">Blue</option>
-                  <option value="Green">Green</option>
-                  <option value="Gray">Gray</option>
-                </select>
-              </div>
-              
-              <!-- Add to Cart Button (disabled if out of stock) -->
-              <div class="card-actions">
-                <button class="btn" type="submit" <?= ($stock <= 0) ? 'disabled' : '' ?>>
+          <!-- Add to Cart Button -->
+          <div class="card-actions">
+            <?php if (is_logged_in() && is_customer()): ?>
+              <form class="ajax-cart-form quick-add-form">
+                <input type="hidden" name="product_id" value="<?= (int)$p['id'] ?>" />
+                <input type="hidden" name="quantity" value="1" />
+                <button type="submit" class="btn" <?= ($stock <= 0) ? 'disabled' : '' ?>>
                   🛒 Add to Cart
                 </button>
-              </div>
-            </form>
-          <?php else: ?>
-            <!-- Not logged in - show view/login buttons -->
-            <div class="card-actions">
+              </form>
+            <?php elseif (is_logged_in()): ?>
+              <a class="btn btn-ghost" href="index.php?page=product&id=<?= (int)$p['id'] ?>">View Details</a>
+            <?php else: ?>
               <a class="btn btn-ghost" href="index.php?page=product&id=<?= (int)$p['id'] ?>">View Details</a>
               <a class="btn" href="index.php?page=login">Login</a>
-            </div>
-          <?php endif; ?>
+            <?php endif; ?>
+          </div>
         </div>
       </div>
     <?php endforeach; ?>

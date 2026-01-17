@@ -119,3 +119,17 @@ function cart_remove_action(PDO $pdo): void {
   cart_remove($pdo, $userId, $cartId);
   $_SESSION['flash'] = ['type' => 'success', 'message' => 'Item removed.'];
 }
+
+/**
+ * Clear all items from cart (Form action handler)
+ * Called when user clicks "Remove All" button
+ * 
+ * @param PDO $pdo - Database connection
+ */
+function cart_clear_action(PDO $pdo): void {
+  $userId = (int)$_SESSION['user']['id'];
+  
+  // Clear all items from cart
+  cart_clear($pdo, $userId);
+  $_SESSION['flash'] = ['type' => 'success', 'message' => 'Cart cleared.'];
+}

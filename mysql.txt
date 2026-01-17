@@ -66,11 +66,3 @@ CREATE TABLE IF NOT EXISTS order_items (
 INSERT INTO users (name, email, password, role)
 VALUES ('Admin', 'admin@gmail.com', '123456', 'admin')
 ON DUPLICATE KEY UPDATE email=email;
-
--- Sample products
-INSERT INTO products (name, description, price, size, color, category, stock, image) VALUES
-('T-Shirt', 'Cotton t-shirt for men', 500.00, 'M', 'Black', 'Men', 50, NULL),
-('Jeans', 'Denim jeans for men', 1200.00, 'L', 'Blue', 'Men', 30, NULL),
-('Saree', 'Silk saree for women', 2500.00, 'Free', 'Red', 'Women', 20, NULL),
-('Kurti', 'Cotton kurti for women', 800.00, 'M', 'Yellow', 'Women', 40, NULL),
-('Kids Dress', 'Frock for kids', 600.00, 'S', 'Pink', 'Kids', 25, NULL);

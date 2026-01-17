@@ -42,7 +42,7 @@ function cart_count_items(PDO $pdo, int $userId): int {
  * @return array - Array of cart items with product info
  */
 function cart_get_items(PDO $pdo, int $userId): array {
-  // JOIN products table to get product details (name, price, image, etc.)
+  // JOIN products table to get product details (name, price, image, size, color, etc.)
   $st = $pdo->prepare("
     SELECT c.id AS cart_id, c.quantity, p.*
     FROM cart c

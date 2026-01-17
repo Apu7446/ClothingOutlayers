@@ -65,49 +65,19 @@ require __DIR__ . '/header.php';
 
       <!-- Add to Cart Form (customers only - not admin/staff) -->
       <?php if (is_logged_in() && is_customer()): ?>
-        <form method="post" action="index.php?page=cart&action=add" class="buy-box">
+        <form method="post" action="index.php?page=cart&action=add" class="buy-box ajax-cart-form">
           <!-- Hidden product ID -->
           <input type="hidden" name="product_id" value="<?= (int)$product['id'] ?>" />
           
-          <!-- Selection Options -->
-          <div class="select-options">
-            <!-- Size Selection -->
-            <label>
-              Size
-              <select name="size" required>
-                <option value="">Select Size</option>
-                <option value="S">S</option>
-                <option value="M">M</option>
-                <option value="L">L</option>
-                <option value="XL">XL</option>
-                <option value="XXL">XXL</option>
-              </select>
-            </label>
-            
-            <!-- Color Selection -->
-            <label>
-              Color
-              <select name="color" required>
-                <option value="">Select Color</option>
-                <option value="Black">Black</option>
-                <option value="White">White</option>
-                <option value="Red">Red</option>
-                <option value="Blue">Blue</option>
-                <option value="Green">Green</option>
-                <option value="Gray">Gray</option>
-              </select>
-            </label>
-            
-            <!-- Quantity Input -->
-            <label>
-              Quantity
-              <input type="number" name="quantity" value="1" min="1" max="99" />
-            </label>
+          <!-- Quantity Input -->
+          <div class="option-group">
+            <label class="option-label">Quantity:</label>
+            <input type="number" name="quantity" value="1" min="1" max="99" class="qty-input" />
           </div>
           
           <!-- Add to Cart Button (disabled if out of stock) -->
-          <button class="btn" type="submit" <?= ((int)$product['stock'] <= 0) ? 'disabled' : '' ?>>
-            Add to Cart
+          <button class="btn btn-primary" type="submit" <?= ((int)$product['stock'] <= 0) ? 'disabled' : '' ?>>
+            🛒 Add to Cart
           </button>
         </form>
       <?php elseif (is_logged_in()): ?>
