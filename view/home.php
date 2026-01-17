@@ -1,22 +1,49 @@
-<?php require __DIR__ . '/header.php'; ?>
+<?php 
+/**
+ * ========================================
+ * HOME PAGE VIEW
+ * ========================================
+ * This is the main landing page of the website.
+ * 
+ * Sections:
+ * 1. Hero Section - Welcome message with call-to-action buttons
+ * 2. Features Section - Why choose us (4 feature cards)
+ * 3. Products Section - Featured products (first 6)
+ * 4. About Us Section - Company story and mission
+ * 5. Contact Us Section - Contact information
+ * 
+ * Variables from controller:
+ * - $products: Array of featured products (6 max)
+ * - $cartCount: Cart item count for header
+ * - $flash: Flash messages
+ */
+require __DIR__ . '/header.php'; 
+?>
 
-<!-- Hero Section -->
+<!-- ========== HERO SECTION ========== -->
+<!-- First thing visitors see - welcome message -->
 <section class="hero" id="home">
   <div class="hero-card">
     <h1>Welcome to <span class="brand-text">Out<span class="red">Layers</span></span></h1>
     <p>Premium clothing for Men • Women • Kids — Discover your style with us.</p>
+    
+    <!-- Call-to-action buttons -->
     <div class="hero-actions">
       <a class="btn btn-primary" href="#products">Shop Now</a>
       <?php if (!is_logged_in()): ?>
+        <!-- Only show register button if not logged in -->
         <a class="btn btn-outline" href="index.php?page=register">Create Account</a>
       <?php endif; ?>
     </div>
   </div>
 </section>
 
-<!-- Features Section -->
+<!-- ========== FEATURES SECTION ========== -->
+<!-- Highlights why customers should shop here -->
 <section id="features" class="section">
   <h2 class="section-title">Why Choose Us</h2>
+  
+  <!-- 4-column grid of feature cards -->
   <div class="features-grid">
     <div class="feature-card card">
       <div class="feature-icon">🚚</div>
@@ -41,19 +68,25 @@
   </div>
 </section>
 
-<!-- Products Section -->
+<!-- ========== PRODUCTS SECTION ========== -->
+<!-- Shows 6 featured products -->
 <section id="products" class="section">
   <h2 class="section-title">Featured Products</h2>
+  
+  <!-- Product grid (3 columns on desktop) -->
   <div class="grid">
     <?php foreach ($products as $p): ?>
       <?php 
+        // Determine stock status and styling
         $stock = (int)$p['stock'];
         $stockClass = $stock > 10 ? '' : ($stock > 0 ? 'low' : 'out');
         $stockText = $stock > 10 ? 'In Stock' : ($stock > 0 ? "Only $stock left" : 'Out of Stock');
       ?>
+      
+      <!-- Single Product Card -->
       <div class="card product-card">
+        <!-- Product Image (clickable) -->
         <a href="index.php?page=product&id=<?= (int)$p['id'] ?>" class="card-media">
-
           <?php if (!empty($p['image'])): ?>
             <img src="<?= htmlspecialchars((string)$p['image']) ?>" alt="<?= htmlspecialchars((string)$p['name']) ?>" />
           <?php else: ?>
@@ -62,23 +95,31 @@
           <span class="btn-quick-view">Quick View</span>
         </a>
 
+        <!-- Product Details -->
         <div class="card-body">
+          <!-- Category Tag -->
           <div class="card-category"><?= htmlspecialchars((string)($p['category'] ?? 'General')) ?></div>
+          
+          <!-- Product Name (clickable) -->
           <h3 class="card-title">
             <a href="index.php?page=product&id=<?= (int)$p['id'] ?>">
               <?= htmlspecialchars((string)$p['name']) ?>
             </a>
           </h3>
           
+          <!-- Price and Stock Status -->
           <div class="card-price-row">
             <span class="card-price">৳<?= number_format((float)$p['price'], 0) ?></span>
             <span class="card-stock <?= $stockClass ?>"><?= $stockText ?></span>
           </div>
 
+          <!-- Add to Cart Form (only for logged in users) -->
           <?php if (is_logged_in()): ?>
             <form method="post" action="index.php?page=cart&action=add" class="product-form">
               <input type="hidden" name="product_id" value="<?= (int)$p['id'] ?>" />
               <input type="hidden" name="quantity" value="1" />
+              
+              <!-- Size and Color Selection -->
               <div class="select-row">
                 <select name="size" class="select-sm" required>
                   <option value="">Select Size</option>
@@ -98,6 +139,8 @@
                   <option value="Gray">Gray</option>
                 </select>
               </div>
+              
+              <!-- Add to Cart Button (disabled if out of stock) -->
               <div class="card-actions">
                 <button class="btn" type="submit" <?= ($stock <= 0) ? 'disabled' : '' ?>>
                   🛒 Add to Cart
@@ -105,6 +148,7 @@
               </div>
             </form>
           <?php else: ?>
+            <!-- Not logged in - show view/login buttons -->
             <div class="card-actions">
               <a class="btn btn-ghost" href="index.php?page=product&id=<?= (int)$p['id'] ?>">View Details</a>
               <a class="btn" href="index.php?page=login">Login</a>
@@ -114,6 +158,8 @@
       </div>
     <?php endforeach; ?>
   </div>
+  
+  <!-- View All Products Button -->
   <div class="section-cta">
     <a href="index.php?page=products" class="btn btn-primary">View All Products</a>
   </div>

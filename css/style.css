@@ -311,6 +311,29 @@ html[data-theme="light"] .theme-icon::before {
   color: white;
 }
 
+/* Cart Button */
+.btn-cart {
+  background: var(--brand);
+  color: white;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-cart:hover {
+  background: #b91c1c;
+  color: white;
+}
+
+.btn-cart .badge {
+  background: white;
+  color: var(--brand);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
 /* Danger Button */
 .btn-danger {
   background: var(--danger);
