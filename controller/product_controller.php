@@ -227,3 +227,109 @@ function admin_product_update_action(PDO $pdo): void {
   product_update_basic($pdo, $id, $name, $price, $stock);
   $_SESSION['flash'] = ['type' => 'success', 'message' => 'Product updated.'];
 }
+
+/* ========================================
+   EDIT PRODUCT (Admin/Staff Access)
+   ======================================== */
+
+/**
+ * Display edit product page
+ * Accessible by Admin and Staff
+ * 
+ * @param PDO $pdo - Database connection
+ */
+function edit_product_view(PDO $pdo): void {
+  $cartCount = cart_count($pdo);
+  $flash = flash_get();
+  
+  $id = (int)($_GET['id'] ?? 0);
+  $product = null;
+  
+  if ($id > 0) {
+    $product = product_get_by_id($pdo, $id);
+  }
+  
+  require __DIR__ . '/../view/edit_product.php';
+}
+
+/**
+ * Process edit product form submission
+ * 
+ * @param PDO $pdo - Database connection
+ */
+function edit_product_action(PDO $pdo): void {
+  $id = (int)($_POST['product_id'] ?? 0);
+  
+  if ($id <= 0) {
+    $_SESSION['flash'] = ['type' => 'error', 'message' => 'Invalid product.'];
+    redirect('index.php?page=home');
+  }
+  
+  // Get form data
+  $name = trim((string)($_POST['name'] ?? ''));
+  $price = (float)($_POST['price'] ?? 0);
+  $stock = (int)($_POST['stock'] ?? 0);
+  $category = trim((string)($_POST['category'] ?? ''));
+  $size = trim((string)($_POST['size'] ?? ''));
+  $color = trim((string)($_POST['color'] ?? ''));
+  $description = trim((string)($_POST['description'] ?? ''));
+  
+  // Validate
+  if ($name === '' || $price <= 0 || $category === '' || $size === '' || $color === '') {
+    $_SESSION['flash'] = ['type' => 'error', 'message' => 'Please fill all required fields.'];
+    redirect('index.php?page=edit_product&id=' . $id);
+  }
+  
+  // Update product data
+  $data = [
+    'name' => $name,
+    'description' => $description,
+    'price' => $price,
+    'size' => $size,
+    'color' => $color,
+    'category' => $category,
+    'stock' => $stock
+  ];
+  
+  product_update_full($pdo, $id, $data);
+  
+  // Handle image upload if provided
+  if (isset($_FILES['product_image']) && $_FILES['product_image']['size'] > 0) {
+    $upload_dir = __DIR__ . '/../images/products/';
+    if (!is_dir($upload_dir)) {
+      mkdir($upload_dir, 0755, true);
+    }
+    
+    $file_ext = strtolower(pathinfo($_FILES['product_image']['name'], PATHINFO_EXTENSION));
+    $allowed_ext = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    
+    if (in_array($file_ext, $allowed_ext) && $_FILES['product_image']['size'] < 5242880) {
+      $new_filename = 'product_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $file_ext;
+      if (move_uploaded_file($_FILES['product_image']['tmp_name'], $upload_dir . $new_filename)) {
+        $image_path = 'images/products/' . $new_filename;
+        product_update_image($pdo, $id, $image_path);
+      }
+    }
+  }
+  
+  $_SESSION['flash'] = ['type' => 'success', 'message' => 'Product updated successfully! ✅'];
+  redirect('index.php?page=edit_product&id=' . $id);
+}
+
+/**
+ * Delete a product
+ * 
+ * @param PDO $pdo - Database connection
+ */
+function delete_product_action(PDO $pdo): void {
+  $id = (int)($_GET['id'] ?? 0);
+  
+  if ($id <= 0) {
+    $_SESSION['flash'] = ['type' => 'error', 'message' => 'Invalid product.'];
+    redirect('index.php?page=home');
+  }
+  
+  product_delete($pdo, $id);
+  $_SESSION['flash'] = ['type' => 'success', 'message' => 'Product deleted successfully!'];
+  redirect('index.php?page=home');
+}

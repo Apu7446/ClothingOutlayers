@@ -49,6 +49,26 @@ require __DIR__ . '/header.php';
         <input type="password" name="password" required />
       </label>
 
+      <!-- Security Question - Required for password recovery -->
+      <label>
+        Security Question *
+        <select name="security_question" required>
+          <option value="">-- Select a Security Question --</option>
+          <option value="pet_name">What is your pet's name?</option>
+          <option value="birth_city">In which city were you born?</option>
+          <option value="school_name">What was your first school's name?</option>
+          <option value="favorite_food">What is your favorite food?</option>
+          <option value="mother_maiden">What is your mother's maiden name?</option>
+          <option value="best_friend">What is your childhood best friend's name?</option>
+        </select>
+      </label>
+
+      <!-- Security Answer - Required -->
+      <label>
+        Security Answer *
+        <input type="text" name="security_answer" required placeholder="Your answer (remember this for password recovery)" />
+      </label>
+
       <!-- Phone - Optional -->
       <label>
         Phone

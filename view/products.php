@@ -104,7 +104,11 @@ require __DIR__ . '/header.php';
 
         <!-- Add to Cart Button -->
         <div class="card-actions">
-          <?php if (is_logged_in() && is_customer()): ?>
+          <?php if (is_logged_in() && (is_admin() || is_staff())): ?>
+            <!-- Admin/Staff can edit products -->
+            <a class="btn btn-warning" href="index.php?page=edit_product&id=<?= (int)$p['id'] ?>">✏️ Edit</a>
+            <a class="btn btn-ghost" href="index.php?page=product&id=<?= (int)$p['id'] ?>">View</a>
+          <?php elseif (is_logged_in() && is_customer()): ?>
             <form class="ajax-cart-form quick-add-form">
               <input type="hidden" name="product_id" value="<?= (int)$p['id'] ?>" />
               <input type="hidden" name="quantity" value="1" />

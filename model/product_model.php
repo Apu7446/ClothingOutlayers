@@ -117,6 +117,43 @@ function product_update_basic(PDO $pdo, int $id, string $name, float $price, int
 }
 
 /**
+ * Update full product information (Admin/Staff function)
+ * 
+ * @param PDO $pdo - Database connection
+ * @param int $id - Product ID to update
+ * @param array $data - Product data array
+ */
+function product_update_full(PDO $pdo, int $id, array $data): void {
+  $st = $pdo->prepare("
+    UPDATE products 
+    SET name=?, description=?, price=?, size=?, color=?, category=?, stock=?
+    WHERE id=?
+  ");
+  $st->execute([
+    $data['name'],
+    $data['description'],
+    $data['price'],
+    $data['size'],
+    $data['color'],
+    $data['category'],
+    $data['stock'],
+    $id
+  ]);
+}
+
+/**
+ * Update product image
+ * 
+ * @param PDO $pdo - Database connection
+ * @param int $id - Product ID
+ * @param string $image - New image path
+ */
+function product_update_image(PDO $pdo, int $id, string $image): void {
+  $st = $pdo->prepare("UPDATE products SET image=? WHERE id=?");
+  $st->execute([$image, $id]);
+}
+
+/**
  * Delete a product (Admin function)
  * 
  * @param PDO $pdo - Database connection

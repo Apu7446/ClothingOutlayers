@@ -128,9 +128,16 @@ function user_register_action(PDO $pdo): void {
   $password = (string)($_POST['password'] ?? '');
   $phone = trim((string)($_POST['phone'] ?? ''));
   $address = trim((string)($_POST['address'] ?? ''));
+  $securityQuestion = trim((string)($_POST['security_question'] ?? ''));
+  $securityAnswer = trim((string)($_POST['security_answer'] ?? ''));
 
   if ($name === '' || $email === '' || $password === '') {
     $_SESSION['flash'] = ['type' => 'error', 'message' => 'Name, email, password required.'];
+    redirect('index.php?page=register');
+  }
+
+  if ($securityQuestion === '' || $securityAnswer === '') {
+    $_SESSION['flash'] = ['type' => 'error', 'message' => 'Security question and answer are required for password recovery.'];
     redirect('index.php?page=register');
   }
 
@@ -139,13 +146,15 @@ function user_register_action(PDO $pdo): void {
     redirect('index.php?page=register');
   }
 
-  user_create(
+  user_create_with_security(
     $pdo,
     $name,
     $email,
     $password,
     $phone !== '' ? $phone : null,
-    $address !== '' ? $address : null
+    $address !== '' ? $address : null,
+    $securityQuestion,
+    strtolower($securityAnswer) // Store answer in lowercase for case-insensitive comparison
   );
 
   $_SESSION['flash'] = ['type' => 'success', 'message' => 'Registration successful. Please login.'];
@@ -278,5 +287,213 @@ function customer_update_image_action(PDO $pdo): void {
     $_SESSION['flash'] = ['type' => 'success', 'message' => 'Profile image updated successfully.'];
   } else {
     $_SESSION['flash'] = ['type' => 'error', 'message' => 'Failed to upload image.'];
+  }
+}
+
+/* ========================================
+   FORGOT PASSWORD / RESET PASSWORD FUNCTIONS
+   Using Security Question Method
+   ======================================== */
+
+/**
+ * Display the forgot password page
+ * @param PDO $pdo - Database connection
+ */
+function forgot_password_view(PDO $pdo): void {
+  $cartCount = cart_count($pdo);
+  $flash = flash_get();
+  
+  // Default values
+  $showSecurityQuestion = false;
+  $answerCorrect = false;
+  $userEmail = '';
+  $userQuestion = '';
+  
+  require __DIR__ . '/../view/forgot_password.php';
+}
+
+/**
+ * Process forgot password form submission
+ * Uses security question verification
+ * 
+ * @param PDO $pdo - Database connection
+ */
+function forgot_password_action(PDO $pdo): void {
+  $cartCount = cart_count($pdo);
+  $flash = flash_get();
+  
+  $step = (int)($_POST['step'] ?? 1);
+  $email = trim((string)($_POST['email'] ?? ''));
+  
+  // Step 1: Check email and get security question
+  if ($step === 1) {
+    if ($email === '') {
+      $_SESSION['flash'] = ['type' => 'error', 'message' => 'Email is required.'];
+      redirect('index.php?page=forgot_password');
+    }
+    
+    $user = user_find_by_email($pdo, $email);
+    
+    if (!$user) {
+      $_SESSION['flash'] = ['type' => 'error', 'message' => 'No account found with this email.'];
+      redirect('index.php?page=forgot_password');
+    }
+    
+    // Check if user has security question set
+    if (empty($user['security_question'])) {
+      $_SESSION['flash'] = ['type' => 'error', 'message' => 'No security question set for this account. Please contact admin.'];
+      redirect('index.php?page=forgot_password');
+    }
+    
+    // Show security question
+    $showSecurityQuestion = true;
+    $answerCorrect = false;
+    $userEmail = $email;
+    $userQuestion = $user['security_question'];
+    
+    require __DIR__ . '/../view/forgot_password.php';
+    exit;
+  }
+  
+  // Step 2: Verify security answer
+  if ($step === 2) {
+    $securityAnswer = trim((string)($_POST['security_answer'] ?? ''));
+    
+    if ($email === '' || $securityAnswer === '') {
+      $_SESSION['flash'] = ['type' => 'error', 'message' => 'Please provide your answer.'];
+      redirect('index.php?page=forgot_password');
+    }
+    
+    $user = user_find_by_email($pdo, $email);
+    
+    if (!$user) {
+      $_SESSION['flash'] = ['type' => 'error', 'message' => 'Invalid request.'];
+      redirect('index.php?page=forgot_password');
+    }
+    
+    // Check answer (case-insensitive)
+    if (strtolower($securityAnswer) !== strtolower($user['security_answer'])) {
+      $_SESSION['flash'] = ['type' => 'error', 'message' => 'Incorrect answer. Please try again.'];
+      
+      // Show the question again
+      $showSecurityQuestion = true;
+      $answerCorrect = false;
+      $userEmail = $email;
+      $userQuestion = $user['security_question'];
+      
+      require __DIR__ . '/../view/forgot_password.php';
+      exit;
+    }
+    
+    // Answer correct - show password reset form
+    $showSecurityQuestion = true;
+    $answerCorrect = true;
+    $userEmail = $email;
+    $userQuestion = $user['security_question'];
+    
+    require __DIR__ . '/../view/forgot_password.php';
+    exit;
+  }
+  
+  // Step 3: Reset password
+  if ($step === 3) {
+    $verified = (int)($_POST['verified'] ?? 0);
+    $newPassword = (string)($_POST['new_password'] ?? '');
+    $confirmPassword = (string)($_POST['confirm_password'] ?? '');
+    
+    if ($verified !== 1 || $email === '') {
+      $_SESSION['flash'] = ['type' => 'error', 'message' => 'Invalid request.'];
+      redirect('index.php?page=forgot_password');
+    }
+    
+    if (strlen($newPassword) < 6) {
+      $_SESSION['flash'] = ['type' => 'error', 'message' => 'Password must be at least 6 characters.'];
+      redirect('index.php?page=forgot_password');
+    }
+    
+    if ($newPassword !== $confirmPassword) {
+      $_SESSION['flash'] = ['type' => 'error', 'message' => 'Passwords do not match.'];
+      redirect('index.php?page=forgot_password');
+    }
+    
+    $user = user_find_by_email($pdo, $email);
+    
+    if (!$user) {
+      $_SESSION['flash'] = ['type' => 'error', 'message' => 'Invalid request.'];
+      redirect('index.php?page=forgot_password');
+    }
+    
+    // Update password
+    $hash = password_hash($newPassword, PASSWORD_DEFAULT);
+    user_update_password($pdo, (int)$user['id'], $hash);
+    
+    $_SESSION['flash'] = ['type' => 'success', 'message' => 'Password reset successful! Please login with your new password.'];
+    redirect('index.php?page=login');
+  }
+  
+  redirect('index.php?page=forgot_password');
+}
+
+/**
+ * Display the reset password page
+ * @param PDO $pdo - Database connection
+ */
+function reset_password_view(PDO $pdo): void {
+  $cartCount = cart_count($pdo);
+  $flash = flash_get();
+  
+  $token = trim((string)($_GET['token'] ?? ''));
+  $tokenValid = false;
+  $userEmail = '';
+  
+  if ($token !== '') {
+    $tokenData = verify_password_reset_token($pdo, $token);
+    if ($tokenData) {
+      $tokenValid = true;
+      $userEmail = $tokenData['email'];
+    }
+  }
+  
+  require __DIR__ . '/../view/reset_password.php';
+}
+
+/**
+ * Process reset password form submission
+ * Updates user's password
+ * 
+ * @param PDO $pdo - Database connection
+ */
+function reset_password_action(PDO $pdo): void {
+  $token = trim((string)($_POST['token'] ?? ''));
+  $password = (string)($_POST['password'] ?? '');
+  $confirmPassword = (string)($_POST['confirm_password'] ?? '');
+  
+  // Validate inputs
+  if ($token === '' || $password === '') {
+    $_SESSION['flash'] = ['type' => 'error', 'message' => 'All fields are required.'];
+    redirect('index.php?page=reset_password&token=' . urlencode($token));
+  }
+  
+  // Check password length
+  if (strlen($password) < 6) {
+    $_SESSION['flash'] = ['type' => 'error', 'message' => 'Password must be at least 6 characters.'];
+    redirect('index.php?page=reset_password&token=' . urlencode($token));
+  }
+  
+  // Check passwords match
+  if ($password !== $confirmPassword) {
+    $_SESSION['flash'] = ['type' => 'error', 'message' => 'Passwords do not match.'];
+    redirect('index.php?page=reset_password&token=' . urlencode($token));
+  }
+  
+  // Reset password
+  $success = reset_password_with_token($pdo, $token, $password);
+  
+  if ($success) {
+    $_SESSION['flash'] = ['type' => 'success', 'message' => 'Password reset successful! Please login with your new password.'];
+    redirect('index.php?page=login');
+  } else {
+    $_SESSION['flash'] = ['type' => 'error', 'message' => 'Invalid or expired reset token.'];
+    redirect('index.php?page=forgot_password');
   }
 }
