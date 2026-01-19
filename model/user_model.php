@@ -79,6 +79,28 @@ function user_create(PDO $pdo, string $name, string $email, string $password, ?s
 }
 
 /**
+ * Create a new user with security question (Registration)
+ * 
+ * @param PDO $pdo - Database connection
+ * @param string $name - User's full name
+ * @param string $email - User's email
+ * @param string $password - Plain text password (will be hashed)
+ * @param string|null $phone - Phone number (optional)
+ * @param string|null $address - Address (optional)
+ * @param string $securityQuestion - Security question key
+ * @param string $securityAnswer - Answer to security question
+ * @return int - The new user's ID
+ */
+function user_create_with_security(PDO $pdo, string $name, string $email, string $password, ?string $phone, ?string $address, string $securityQuestion, string $securityAnswer): int {
+  $hash = password_hash($password, PASSWORD_DEFAULT);
+
+  $st = $pdo->prepare("INSERT INTO users (name,email,password,phone,address,role,security_question,security_answer) VALUES (?,?,?,?,?,'customer',?,?)");
+  $st->execute([$name, $email, $hash, $phone, $address, $securityQuestion, $securityAnswer]);
+
+  return (int)$pdo->lastInsertId();
+}
+
+/**
  * Update a user's password
  * Used when auto-upgrading plain passwords to hashed
  * 
@@ -165,4 +187,94 @@ function user_get_profile(PDO $pdo, int $userId): ?array {
   $st->execute([$userId]);
   $user = $st->fetch();
   return $user ?: null;
+}
+
+/* ========================================
+   PASSWORD RESET FUNCTIONS
+   Used for "Forgot Password" feature
+   ======================================== */
+
+/**
+ * Create a password reset token for a user
+ * 
+ * @param PDO $pdo - Database connection
+ * @param int $userId - User's ID
+ * @return string - The generated token
+ */
+function create_password_reset_token(PDO $pdo, int $userId): string {
+  // Generate a secure random token
+  $token = bin2hex(random_bytes(32));
+  
+  // Token expires in 1 hour
+  $expiresAt = date('Y-m-d H:i:s', strtotime('+1 hour'));
+  
+  // Delete any existing tokens for this user
+  $st = $pdo->prepare("DELETE FROM password_reset_tokens WHERE user_id = ?");
+  $st->execute([$userId]);
+  
+  // Insert new token
+  $st = $pdo->prepare("INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)");
+  $st->execute([$userId, $token, $expiresAt]);
+  
+  return $token;
+}
+
+/**
+ * Verify a password reset token
+ * 
+ * @param PDO $pdo - Database connection
+ * @param string $token - The token to verify
+ * @return array|null - Token data with user info, or null if invalid
+ */
+function verify_password_reset_token(PDO $pdo, string $token): ?array {
+  $st = $pdo->prepare("
+    SELECT t.*, u.email, u.name 
+    FROM password_reset_tokens t 
+    JOIN users u ON t.user_id = u.id 
+    WHERE t.token = ? 
+    AND t.expires_at > NOW() 
+    AND t.used = 0 
+    LIMIT 1
+  ");
+  $st->execute([$token]);
+  $result = $st->fetch();
+  return $result ?: null;
+}
+
+/**
+ * Mark a password reset token as used
+ * 
+ * @param PDO $pdo - Database connection
+ * @param string $token - The token to mark as used
+ */
+function mark_token_used(PDO $pdo, string $token): void {
+  $st = $pdo->prepare("UPDATE password_reset_tokens SET used = 1 WHERE token = ?");
+  $st->execute([$token]);
+}
+
+/**
+ * Reset user password with token
+ * 
+ * @param PDO $pdo - Database connection
+ * @param string $token - Reset token
+ * @param string $newPassword - New plain text password
+ * @return bool - Success status
+ */
+function reset_password_with_token(PDO $pdo, string $token, string $newPassword): bool {
+  // Verify token first
+  $tokenData = verify_password_reset_token($pdo, $token);
+  if (!$tokenData) {
+    return false;
+  }
+  
+  // Hash the new password
+  $hash = password_hash($newPassword, PASSWORD_DEFAULT);
+  
+  // Update user's password
+  user_update_password($pdo, (int)$tokenData['user_id'], $hash);
+  
+  // Mark token as used
+  mark_token_used($pdo, $token);
+  
+  return true;
 }

@@ -58,6 +58,11 @@ require __DIR__ . '/header.php';
       <!-- SUBMIT BUTTON - Sends form data to server -->
       <button class="btn" type="submit">Login</button>
       
+      <!-- Forgot Password link -->
+      <p class="muted" style="margin-top: 0.5rem;">
+        <a href="index.php?page=forgot_password">Forgot Password?</a>
+      </p>
+      
       <!-- Link to registration page for new users -->
       <p class="muted">No account? <a href="index.php?page=register">Register</a></p>
     </form>

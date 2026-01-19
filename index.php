@@ -38,6 +38,8 @@ require_once __DIR__ . '/controller/user_controller.php';     // Login, Register
 require_once __DIR__ . '/controller/product_controller.php';  // Product display
 require_once __DIR__ . '/controller/cart_controller.php';     // Add to cart, Update cart
 require_once __DIR__ . '/controller/order_controller.php';    // Place orders
+require_once __DIR__ . '/controller/admin_controller.php';    // Admin functions
+require_once __DIR__ . '/controller/admin_controller.php';    // Admin management
 
 // Get database connection object
 $pdo = db();
@@ -248,6 +250,21 @@ switch ($page) {
     redirect('index.php?page=home');
     break;
 
+  /* -------- Forgot Password / Reset Password -------- */
+  case 'forgot_password':
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+      forgot_password_action($pdo);
+    }
+    forgot_password_view($pdo);
+    break;
+
+  case 'reset_password':
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+      reset_password_action($pdo);
+    }
+    reset_password_view($pdo);
+    break;
+
   /* -------- customer dashboard -------- */
   case 'customer_dashboard':
     require_login();
@@ -272,11 +289,54 @@ switch ($page) {
   /* -------- admin -------- */
   case 'admin_dashboard':
     require_admin();
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && (($_GET['action'] ?? '') === 'update_order_status')) {
-      admin_update_order_status_action($pdo);
-      redirect('index.php?page=admin_dashboard');
-    }
-    admin_dashboard_view($pdo);
+    $stats = admin_dashboard_stats();
+    extract($stats);
+    require 'view/admin/dashboard.php';
+    break;
+
+  case 'admin_order_detail':
+    require_admin();
+    admin_order_detail();
+    break;
+
+  case 'admin_update_order':
+    require_admin();
+    admin_update_order();
+    break;
+
+  case 'admin_delete_order':
+    require_admin();
+    admin_delete_order();
+    break;
+
+  case 'admin_customer_edit_save':
+    require_admin();
+    admin_customer_edit_save();
+    break;
+
+  case 'admin_reset_password':
+    require_admin();
+    admin_reset_password();
+    break;
+
+  case 'admin_customer_delete':
+    require_admin();
+    admin_customer_delete();
+    break;
+
+  case 'add_staff':
+    require_admin();
+    admin_add_staff();
+    break;
+
+  case 'delete_staff':
+    require_admin();
+    admin_delete_staff();
+    break;
+
+  case 'add_product':
+    require_admin();
+    admin_add_product();
     break;
 
   case 'admin_add_product':
@@ -297,6 +357,28 @@ switch ($page) {
       redirect('index.php?page=admin_manage_products');
     }
     admin_manage_products_view($pdo);
+    break;
+
+  /* -------- Edit Product (Admin/Staff) -------- */
+  case 'edit_product':
+    // Both admin and staff can edit products
+    if (!is_admin() && !is_staff()) {
+      $_SESSION['flash'] = ['type' => 'error', 'message' => 'Access denied. Admin or Staff only.'];
+      redirect('index.php?page=home');
+    }
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+      edit_product_action($pdo);
+    }
+    edit_product_view($pdo);
+    break;
+
+  case 'delete_product':
+    // Both admin and staff can delete products
+    if (!is_admin() && !is_staff()) {
+      $_SESSION['flash'] = ['type' => 'error', 'message' => 'Access denied. Admin or Staff only.'];
+      redirect('index.php?page=home');
+    }
+    delete_product_action($pdo);
     break;
 
   /* -------- admin orders -------- */

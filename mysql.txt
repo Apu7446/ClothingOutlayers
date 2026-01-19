@@ -13,6 +13,8 @@ CREATE TABLE IF NOT EXISTS users (
   address TEXT,
   profile_image VARCHAR(255) DEFAULT NULL,
   role ENUM('customer','admin','staff') DEFAULT 'customer',
+  security_question VARCHAR(255) DEFAULT NULL,
+  security_answer VARCHAR(255) DEFAULT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -59,6 +61,18 @@ CREATE TABLE IF NOT EXISTS order_items (
   price DECIMAL(10,2) NOT NULL,
   CONSTRAINT fk_orderitems_order FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
   CONSTRAINT fk_orderitems_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+);
+
+-- Password Reset Tokens table
+-- Used for "Forgot Password" feature
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  token VARCHAR(64) NOT NULL UNIQUE,
+  expires_at DATETIME NOT NULL,
+  used TINYINT(1) DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_reset_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- Default admin (password plain "123456" রাখা হলো যাতে basic setup এ কাজ করে)
