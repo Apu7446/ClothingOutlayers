@@ -46,22 +46,22 @@ require __DIR__ . '/header.php';
   <!-- 4-column grid of feature cards -->
   <div class="features-grid">
     <div class="feature-card card">
-      <div class="feature-icon">🚚</div>
+      <div class="feature-icon"></div>
       <h3>Free Shipping</h3>
       <p>Free shipping on all orders over ৳1000</p>
     </div>
     <div class="feature-card card">
-      <div class="feature-icon">💎</div>
+      <div class="feature-icon"></div>
       <h3>Premium Quality</h3>
       <p>100% authentic and premium quality products</p>
     </div>
     <div class="feature-card card">
-      <div class="feature-icon">🔄</div>
+      <div class="feature-icon"></div>
       <h3>Easy Returns</h3>
       <p>7 days easy return policy</p>
     </div>
     <div class="feature-card card">
-      <div class="feature-icon">💳</div>
+      <div class="feature-icon"></div>
       <h3>Secure Payment</h3>
       <p>Multiple secure payment options</p>
     </div>
@@ -123,14 +123,14 @@ require __DIR__ . '/header.php';
           <div class="card-actions">
             <?php if (is_logged_in() && (is_admin() || is_staff())): ?>
               <!-- Admin/Staff can edit products -->
-              <a class="btn btn-warning" href="index.php?page=edit_product&id=<?= (int)$p['id'] ?>">✏️ Edit</a>
+              <a class="btn btn-warning" href="index.php?page=edit_product&id=<?= (int)$p['id'] ?>">Edit</a>
               <a class="btn btn-ghost" href="index.php?page=product&id=<?= (int)$p['id'] ?>">View</a>
             <?php elseif (is_logged_in() && is_customer()): ?>
               <form class="ajax-cart-form quick-add-form">
                 <input type="hidden" name="product_id" value="<?= (int)$p['id'] ?>" />
                 <input type="hidden" name="quantity" value="1" />
                 <button type="submit" class="btn" <?= ($stock <= 0) ? 'disabled' : '' ?>>
-                  🛒 Add to Cart
+                  Add to Cart
                 </button>
               </form>
             <?php elseif (is_logged_in()): ?>
@@ -176,19 +176,19 @@ require __DIR__ . '/header.php';
     <div class="contact-info card pad">
       <h3>Get In Touch</h3>
       <div class="contact-item">
-        <span class="contact-icon">📍</span>
+        <span class="contact-icon"></span>
         <p>123 Fashion Street, Dhaka, Bangladesh</p>
       </div>
       <div class="contact-item">
-        <span class="contact-icon">📞</span>
+        <span class="contact-icon"></span>
         <p>+880 1234-567890</p>
       </div>
       <div class="contact-item">
-        <span class="contact-icon">✉️</span>
+        <span class="contact-icon"></span>
         <p>info@outlayers.com</p>
       </div>
       <div class="contact-item">
-        <span class="contact-icon">🕐</span>
+        <span class="contact-icon"></span>
         <p>Open: 10:00 AM - 10:00 PM (Sat-Thu)</p>
       </div>
     </div>

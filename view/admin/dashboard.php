@@ -42,7 +42,7 @@
     <!-- Stats Cards -->
     <div class="stats-grid">
       <div class="stat-card">
-        <div class="stat-icon">📦</div>
+        <div class="stat-icon"></div>
         <div class="stat-info">
           <h3><?= $totalProducts ?></h3>
           <p>Total Products</p>
@@ -50,7 +50,7 @@
       </div>
       
       <div class="stat-card">
-        <div class="stat-icon">🛒</div>
+        <div class="stat-icon"></div>
         <div class="stat-info">
           <h3><?= $totalOrders ?></h3>
           <p>Total Orders</p>
@@ -58,7 +58,7 @@
       </div>
       
       <div class="stat-card warning">
-        <div class="stat-icon">⏳</div>
+        <div class="stat-icon"></div>
         <div class="stat-info">
           <h3><?= $pendingOrders ?></h3>
           <p>Pending Orders</p>
@@ -66,7 +66,7 @@
       </div>
       
       <div class="stat-card success">
-        <div class="stat-icon">💰</div>
+        <div class="stat-icon"></div>
         <div class="stat-info">
           <h3>৳<?= number_format($totalRevenue, 2) ?></h3>
           <p>Total Revenue</p>
@@ -76,7 +76,7 @@
 
     <!-- Recent Orders Section -->
     <div class="section-box">
-      <h2>📦 Recent Orders</h2>
+      <h2>Recent Orders</h2>
       <p class="section-desc">Latest orders from customers</p>
       
       <?php if (empty($recentOrders)): ?>
@@ -116,7 +116,7 @@
   <!-- RECENT ORDERS TAB -->
   <?php elseif ($tab === 'recent_orders'): ?>
     <div class="section-box">
-      <h2>📦 Recent Orders</h2>
+      <h2>Recent Orders</h2>
       <p class="section-desc">Latest orders from customers - Quick view and actions</p>
       
       <?php if (empty($recentOrders)): ?>
@@ -160,7 +160,7 @@
   <!-- MANAGE ORDERS TAB -->
   <?php elseif ($tab === 'manage_orders'): ?>
     <div class="section-box">
-      <h2>🛒 Manage Orders</h2>
+      <h2>Manage Orders</h2>
       <p class="section-desc">View all orders, update status, and manage them</p>
       
       <?php if (empty($recentOrders)): ?>
@@ -207,7 +207,7 @@
   <!-- ADD PRODUCT TAB -->
   <?php elseif ($tab === 'add_product'): ?>
     <div class="section-box">
-      <h2>➕ Add New Product</h2>
+      <h2>Add New Product</h2>
       <p class="section-desc">Add a new product to your clothing store</p>
       
       <form method="post" action="index.php?page=add_product" enctype="multipart/form-data" class="admin-form">
@@ -266,12 +266,12 @@
             <label>Color *</label>
             <select name="color" required>
               <option value="">Select Color</option>
-              <option value="black">⚫ Black</option>
-              <option value="white">⚪ White</option>
-              <option value="red">🔴 Red</option>
-              <option value="blue">🔵 Blue</option>
-              <option value="green">💚 Green</option>
-              <option value="yellow">💛 Yellow</option>
+              <option value="black">Black</option>
+              <option value="white">White</option>
+              <option value="red">Red</option>
+              <option value="blue">Blue</option>
+              <option value="green">Green</option>
+              <option value="yellow">Yellow</option>
               <option value="navy">Navy Blue</option>
               <option value="gray">Gray</option>
               <option value="brown">Brown</option>
@@ -294,7 +294,7 @@
         </div>
 
         <div class="form-actions">
-          <button type="submit" class="btn btn-primary">✅ Add Product</button>
+          <button type="submit" class="btn btn-primary">Add Product</button>
           <button type="reset" class="btn btn-ghost">Clear Form</button>
         </div>
       </form>
@@ -337,14 +337,14 @@
           </div>
 
           <div class="form-actions">
-            <button type="submit" class="btn btn-primary">✅ Save Changes</button>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
             <a href="index.php?page=admin_customer_delete&customer_id=<?= $customer_detail['id'] ?>" class="btn btn-danger" onclick="return confirm('Delete this customer? This action cannot be undone.')">🗑️ Delete Customer</a>
           </div>
         </form>
 
         <!-- Password Reset Form -->
         <div class="section-box" style="margin-top: 25px; background: #fff3cd; border: 1px solid #ffc107;">
-          <h3>🔐 Reset Password</h3>
+          <h3>Reset Password</h3>
           <p class="muted" style="margin-bottom: 15px;">Set a new password for this customer</p>
           <form method="post" action="index.php?page=admin_reset_password" class="admin-form">
             <input type="hidden" name="user_id" value="<?= $customer_detail['id'] ?>">
@@ -358,7 +358,7 @@
                 <input type="password" name="confirm_password" required minlength="6" placeholder="Re-enter password">
               </div>
             </div>
-            <button type="submit" class="btn btn-warning" onclick="return confirm('Reset password for this customer?')">🔑 Reset Password</button>
+            <button type="submit" class="btn btn-warning" onclick="return confirm('Reset password for this customer?')">Reset Password</button>
           </form>
         </div>
 
@@ -456,12 +456,12 @@
   <!-- STAFF TAB -->
   <?php elseif ($tab === 'staff'): ?>
     <div class="section-box">
-      <h2>👔 Staff Management</h2>
+      <h2>Staff Management</h2>
       <p class="section-desc">Manage staff members and their permissions</p>
       
       <div class="staff-section">
         <div class="add-staff-form">
-          <h3>➕ Add New Staff Member</h3>
+          <h3>Add New Staff Member</h3>
           <form method="post" action="index.php?page=add_staff" class="admin-form">
             <div class="form-row">
               <div class="form-group">
@@ -499,7 +499,7 @@
             </div>
 
             <div class="form-actions">
-              <button type="submit" class="btn btn-primary">✅ Add Staff Member</button>
+              <button type="submit" class="btn btn-primary">Add Staff Member</button>
               <button type="reset" class="btn btn-ghost">Clear Form</button>
             </div>
           </form>
@@ -535,7 +535,7 @@
                   <td>
                     <a href="index.php?page=delete_staff&id=<?= $staff['id'] ?>" 
                        class="btn btn-sm btn-danger" 
-                       onclick="return confirm('Delete this staff member?')">🗑️ Delete</a>
+                       onclick="return confirm('Delete this staff member?')">Delete</a>
                   </td>
                 </tr>
                 <?php endforeach; ?>

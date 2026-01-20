@@ -85,7 +85,7 @@ declare(strict_types=1);
         
         <!-- Cart button - Only visible for customers (not admin/staff) -->
         <?php if (is_customer()): ?>
-          <a href="index.php?page=cart" class="cart-link">🛒 Cart <span class="cart-badge"><?= (int)$cartCount ?></span></a>
+          <a href="index.php?page=cart" class="cart-link">Cart <span class="cart-badge"><?= (int)$cartCount ?></span></a>
         <?php endif; ?>
         
         <!-- Logout button -->
