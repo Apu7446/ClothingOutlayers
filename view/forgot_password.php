@@ -29,7 +29,7 @@ $securityQuestions = [
 <!-- Forgot Password Page Container -->
 <div class="auth">
   <div class="card pad">
-    <h1>🔐 Forgot Password</h1>
+    <h1>Forgot Password</h1>
 
     <?php if (!isset($showSecurityQuestion) || !$showSecurityQuestion): ?>
       <!-- Step 1: Enter Email -->
@@ -61,7 +61,7 @@ $securityQuestions = [
         
         <label>
           Security Question
-          <input type="text" value="<?= htmlspecialchars($securityQuestions[$userQuestion] ?? $userQuestion) ?>" disabled style="background: #f5f5f5;">
+          <input type="text" value="<?= htmlspecialchars($securityQuestions[$userQuestion] ?? $userQuestion) ?>" disabled style="background: #000000;">
         </label>
 
         <label>
@@ -78,7 +78,7 @@ $securityQuestions = [
 
     <?php elseif ($answerCorrect): ?>
       <!-- Step 3: Set New Password -->
-      <p class="muted" style="color: green;">✅ Security answer verified! Set your new password.</p>
+      <p class="muted" style="color: green;">Security answer verified! Set your new password.</p>
       <p style="margin-bottom: 1rem;"><strong>Email:</strong> <?= htmlspecialchars($userEmail) ?></p>
 
       <form method="post" action="index.php?page=forgot_password" class="form">
@@ -96,7 +96,7 @@ $securityQuestions = [
           <input type="password" name="confirm_password" required minlength="6" placeholder="Re-enter password" />
         </label>
 
-        <button class="btn btn-success" type="submit">🔑 Reset Password</button>
+        <button class="btn btn-success" type="submit">Reset Password</button>
       </form>
 
     <?php endif; ?>

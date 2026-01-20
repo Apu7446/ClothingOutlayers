@@ -10,8 +10,6 @@
  * - user_find_by_id(): Find user by ID
  * - user_create(): Create new user (registration)
  * - user_update_password(): Update user's password
- * - get_all_customers(): Get all customers list
- * - get_customer_count(): Count total customers
  */
 declare(strict_types=1);
 
@@ -111,35 +109,6 @@ function user_create_with_security(PDO $pdo, string $name, string $email, string
 function user_update_password(PDO $pdo, int $userId, string $hash): void {
   $st = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
   $st->execute([$hash, $userId]);
-}
-
-/* ========================================
-   CUSTOMER MANAGEMENT FUNCTIONS
-   Used by admin to manage customers
-   ======================================== */
-
-/**
- * Get all customers from database
- * Ordered by newest first
- * 
- * @param PDO $pdo - Database connection
- * @return array - Array of all customers
- */
-function get_all_customers(PDO $pdo): array {
-  // Only select users with 'customer' role
-  $st = $pdo->query("SELECT id, name, email, phone, address, created_at FROM users WHERE role = 'customer' ORDER BY created_at DESC");
-  return $st->fetchAll();
-}
-
-/**
- * Count total number of customers
- * 
- * @param PDO $pdo - Database connection
- * @return int - Total customer count
- */
-function get_customer_count(PDO $pdo): int {
-  $st = $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'customer'");
-  return (int)$st->fetchColumn();
 }
 
 /* ========================================
