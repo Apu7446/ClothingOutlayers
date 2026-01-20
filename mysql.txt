@@ -11,7 +11,10 @@ CREATE TABLE IF NOT EXISTS users (
   password VARCHAR(255) NOT NULL,
   phone VARCHAR(15),
   address TEXT,
+  profile_image VARCHAR(255) DEFAULT NULL,
   role ENUM('customer','admin','staff') DEFAULT 'customer',
+  security_question VARCHAR(255) DEFAULT NULL,
+  security_answer VARCHAR(255) DEFAULT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -60,16 +63,20 @@ CREATE TABLE IF NOT EXISTS order_items (
   CONSTRAINT fk_orderitems_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 );
 
+-- Password Reset Tokens table
+-- Used for "Forgot Password" feature
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  token VARCHAR(64) NOT NULL UNIQUE,
+  expires_at DATETIME NOT NULL,
+  used TINYINT(1) DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_reset_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 -- Default admin (password plain "123456" রাখা হলো যাতে basic setup এ কাজ করে)
 -- Login code first-time এ এটাকে auto-hash করে update করে দিবে।
 INSERT INTO users (name, email, password, role)
 VALUES ('Admin', 'admin@gmail.com', '123456', 'admin')
 ON DUPLICATE KEY UPDATE email=email;
-
--- Sample products
-INSERT INTO products (name, description, price, size, color, category, stock, image) VALUES
-('T-Shirt', 'Cotton t-shirt for men', 500.00, 'M', 'Black', 'Men', 50, NULL),
-('Jeans', 'Denim jeans for men', 1200.00, 'L', 'Blue', 'Men', 30, NULL),
-('Saree', 'Silk saree for women', 2500.00, 'Free', 'Red', 'Women', 20, NULL),
-('Kurti', 'Cotton kurti for women', 800.00, 'M', 'Yellow', 'Women', 40, NULL),
-('Kids Dress', 'Frock for kids', 600.00, 'S', 'Pink', 'Kids', 25, NULL);

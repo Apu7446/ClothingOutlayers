@@ -1,33 +1,77 @@
 <?php
+/**
+ * ========================================
+ * ORDER CONTROLLER
+ * ========================================
+ * This file handles all order-related operations:
+ * 
+ * CUSTOMER Functions:
+ * - checkout_view(): Display checkout page with cart and order history
+ * - order_place_action(): Process order placement
+ * 
+ * ADMIN Functions:
+ * - admin_dashboard_view(): Admin dashboard with stats
+ * - admin_update_order_status_action(): Update order status
+ * - admin_orders_view(): View all orders with filtering
+ * - admin_customers_view(): View all customers
+ * - admin_customer_add_view(): Add new customer form
+ * - admin_customer_create_action(): Create new customer
+ * - admin_customer_delete_action(): Delete customer
+ * - admin_employees_view(): View all employees
+ * - admin_employee_add_view(): Add new employee form
+ * - admin_employee_create_action(): Create new employee
+ * - admin_employee_delete_action(): Delete employee
+ */
 declare(strict_types=1);
 
+/**
+ * Display checkout page
+ * Shows cart summary and order history
+ * 
+ * @param PDO $pdo - Database connection
+ */
 function checkout_view(PDO $pdo): void {
   $cartCount = cart_count($pdo);
   $flash = flash_get();
 
+  // Get current user's ID
   $userId = (int)$_SESSION['user']['id'];
+  
+  // Get cart items for checkout form
   $cartItems = cart_get_items($pdo, $userId);
 
+  // Calculate cart subtotal
   $subtotal = 0.0;
   foreach ($cartItems as $it) {
     $subtotal += ((float)$it['price']) * ((int)$it['quantity']);
   }
 
+  // Get user's previous orders for order history section
   $myOrders = orders_by_user($pdo, $userId);
 
   require __DIR__ . '/../view/checkout.php';
 }
 
+/**
+ * Process order placement
+ * Creates order from cart, reduces stock, clears cart
+ * 
+ * @param PDO $pdo - Database connection
+ */
 function order_place_action(PDO $pdo): void {
   $userId = (int)$_SESSION['user']['id'];
+  
+  // Get form data
   $shipping = trim((string)($_POST['shipping_address'] ?? ''));
   $payment = trim((string)($_POST['payment_method'] ?? 'COD'));
 
+  // Validate shipping address
   if ($shipping === '') {
     $_SESSION['flash'] = ['type' => 'error', 'message' => 'Shipping address required.'];
     return;
   }
 
+  // Try to create order
   try {
     $orderId = order_create_from_cart($pdo, $userId, $shipping, $payment !== '' ? $payment : 'COD');
     $_SESSION['flash'] = ['type' => 'success', 'message' => "Order placed successfully. Order ID: #{$orderId}"];
@@ -36,27 +80,45 @@ function order_place_action(PDO $pdo): void {
   }
 }
 
-/* -------- admin (inside dashboard page) -------- */
+/* ========================================
+   ADMIN DASHBOARD FUNCTIONS
+   ======================================== */
+
+/**
+ * Display admin dashboard
+ * Shows statistics and recent orders
+ * 
+ * @param PDO $pdo - Database connection
+ */
 function admin_dashboard_view(PDO $pdo): void {
   $cartCount = cart_count($pdo);
   $flash = flash_get();
 
+  // Get statistics for dashboard cards
   $totalProducts = (int)$pdo->query("SELECT COUNT(*) AS c FROM products")->fetch()['c'];
   $totalOrders = (int)$pdo->query("SELECT COUNT(*) AS c FROM orders")->fetch()['c'];
   $pendingOrders = (int)$pdo->query("SELECT COUNT(*) AS c FROM orders WHERE status='pending'")->fetch()['c'];
 
+  // Get recent orders for the table
   $recentOrders = admin_recent_orders($pdo, 20);
 
-  // Calculate total revenue
+  // Calculate total revenue (excluding cancelled orders)
   $totalRevenue = (float)$pdo->query("SELECT COALESCE(SUM(total_amount), 0) AS r FROM orders WHERE status != 'cancelled'")->fetch()['r'];
 
   require __DIR__ . '/../view/admin/dashboard.php';
 }
 
+/**
+ * Update order status (Admin action)
+ * Called when admin changes order status dropdown
+ * 
+ * @param PDO $pdo - Database connection
+ */
 function admin_update_order_status_action(PDO $pdo): void {
   $orderId = (int)($_POST['order_id'] ?? 0);
   $status = trim((string)($_POST['status'] ?? ''));
 
+  // Validate input
   if ($orderId <= 0 || $status === '') return;
 
   try {
@@ -337,4 +399,93 @@ function admin_employee_delete_action(PDO $pdo): void {
   } catch (Throwable $e) {
     $_SESSION['flash'] = ['type' => 'error', 'message' => 'Failed to delete employee.'];
   }
+}
+
+/* ========================================
+   STAFF DASHBOARD FUNCTIONS
+   ======================================== */
+
+/**
+ * Display staff dashboard
+ * Shows order statistics and recent orders
+ * 
+ * @param PDO $pdo - Database connection
+ */
+function staff_dashboard_view(PDO $pdo): void {
+  $cartCount = cart_count($pdo);
+  $flash = flash_get();
+
+  // Get statistics for dashboard cards
+  $totalOrders = (int)$pdo->query("SELECT COUNT(*) AS c FROM orders")->fetch()['c'];
+  $pendingOrders = (int)$pdo->query("SELECT COUNT(*) AS c FROM orders WHERE status='pending'")->fetch()['c'];
+  $completedOrders = (int)$pdo->query("SELECT COUNT(*) AS c FROM orders WHERE status='delivered'")->fetch()['c'];
+  
+  // Get recent orders with customer names
+  $recentOrders = $pdo->query("
+    SELECT o.*, u.name AS customer_name 
+    FROM orders o 
+    LEFT JOIN users u ON o.user_id = u.id 
+    ORDER BY o.created_at DESC 
+    LIMIT 10
+  ")->fetchAll();
+
+  require __DIR__ . '/../view/staff/dashboard.php';
+}
+
+/**
+ * Update order status (Staff action)
+ * 
+ * @param PDO $pdo - Database connection
+ */
+function staff_update_order_status_action(PDO $pdo): void {
+  $orderId = (int)($_POST['order_id'] ?? 0);
+  $status = trim((string)($_POST['status'] ?? ''));
+
+  // Validate
+  $validStatuses = ['pending', 'confirmed', 'shipped', 'delivered'];
+  if ($orderId <= 0 || !in_array($status, $validStatuses)) {
+    $_SESSION['flash'] = ['type' => 'error', 'message' => 'Invalid order or status.'];
+    return;
+  }
+
+  try {
+    $st = $pdo->prepare("UPDATE orders SET status = ? WHERE id = ?");
+    $st->execute([$status, $orderId]);
+    $_SESSION['flash'] = ['type' => 'success', 'message' => 'Order status updated.'];
+  } catch (Throwable $e) {
+    $_SESSION['flash'] = ['type' => 'error', 'message' => 'Failed to update order status.'];
+  }
+}
+
+/**
+ * Display staff orders view with filtering
+ * 
+ * @param PDO $pdo - Database connection
+ * @param string $page - Current page for filtering
+ */
+function staff_orders_view(PDO $pdo, string $page): void {
+  $cartCount = cart_count($pdo);
+  $flash = flash_get();
+
+  // Determine filter based on page
+  $statusFilter = '';
+  if ($page === 'staff_orders_pending') {
+    $statusFilter = 'pending';
+  }
+
+  // Build query
+  $sql = "SELECT o.*, u.name AS customer_name FROM orders o LEFT JOIN users u ON o.user_id = u.id";
+  if ($statusFilter !== '') {
+    $sql .= " WHERE o.status = :status";
+  }
+  $sql .= " ORDER BY o.created_at DESC";
+
+  $st = $pdo->prepare($sql);
+  if ($statusFilter !== '') {
+    $st->bindValue(':status', $statusFilter);
+  }
+  $st->execute();
+  $orders = $st->fetchAll();
+
+  require __DIR__ . '/../view/staff/orders.php';
 }
