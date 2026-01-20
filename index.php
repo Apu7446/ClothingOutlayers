@@ -39,7 +39,6 @@ require_once __DIR__ . '/controller/product_controller.php';  // Product display
 require_once __DIR__ . '/controller/cart_controller.php';     // Add to cart, Update cart
 require_once __DIR__ . '/controller/order_controller.php';    // Place orders
 require_once __DIR__ . '/controller/admin_controller.php';    // Admin functions
-require_once __DIR__ . '/controller/admin_controller.php';    // Admin management
 
 // Get database connection object
 $pdo = db();
