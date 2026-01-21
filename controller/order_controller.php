@@ -1,7 +1,7 @@
 <?php
 /**
  * ========================================
- * ORDER CONTROLLER
+ * ORDER CONTROLLER (MySQLi Procedural)
  * ========================================
  * This file handles all order-related operations:
  * 
@@ -28,17 +28,17 @@ declare(strict_types=1);
  * Display checkout page
  * Shows cart summary and order history
  * 
- * @param PDO $pdo - Database connection
+ * @param mysqli $conn - Database connection
  */
-function checkout_view(PDO $pdo): void {
-  $cartCount = cart_count($pdo);
+function checkout_view(mysqli $conn): void {
+  $cartCount = cart_count($conn);
   $flash = flash_get();
 
   // Get current user's ID
   $userId = (int)$_SESSION['user']['id'];
   
   // Get cart items for checkout form
-  $cartItems = cart_get_items($pdo, $userId);
+  $cartItems = cart_get_items($conn, $userId);
 
   // Calculate cart subtotal
   $subtotal = 0.0;
@@ -47,7 +47,7 @@ function checkout_view(PDO $pdo): void {
   }
 
   // Get user's previous orders for order history section
-  $myOrders = orders_by_user($pdo, $userId);
+  $myOrders = orders_by_user($conn, $userId);
 
   require __DIR__ . '/../view/checkout.php';
 }
@@ -56,9 +56,9 @@ function checkout_view(PDO $pdo): void {
  * Process order placement
  * Creates order from cart, reduces stock, clears cart
  * 
- * @param PDO $pdo - Database connection
+ * @param mysqli $conn - Database connection
  */
-function order_place_action(PDO $pdo): void {
+function order_place_action(mysqli $conn): void {
   $userId = (int)$_SESSION['user']['id'];
   
   // Get form data
@@ -73,7 +73,7 @@ function order_place_action(PDO $pdo): void {
 
   // Try to create order
   try {
-    $orderId = order_create_from_cart($pdo, $userId, $shipping, $payment !== '' ? $payment : 'COD');
+    $orderId = order_create_from_cart($conn, $userId, $shipping, $payment !== '' ? $payment : 'COD');
     $_SESSION['flash'] = ['type' => 'success', 'message' => "Order placed successfully. Order ID: #{$orderId}"];
   } catch (Throwable $e) {
     $_SESSION['flash'] = ['type' => 'error', 'message' => $e->getMessage()];
@@ -88,33 +88,38 @@ function order_place_action(PDO $pdo): void {
  * Display admin dashboard
  * Shows statistics and recent orders
  * 
- * @param PDO $pdo - Database connection
+ * @param mysqli $conn - Database connection
  */
-function admin_dashboard_view(PDO $pdo): void {
-  $cartCount = cart_count($pdo);
+function admin_dashboard_view(mysqli $conn): void {
+  $cartCount = cart_count($conn);
   $flash = flash_get();
 
   // Get statistics for dashboard cards
-  $totalProducts = (int)$pdo->query("SELECT COUNT(*) AS c FROM products")->fetch()['c'];
-  $totalOrders = (int)$pdo->query("SELECT COUNT(*) AS c FROM orders")->fetch()['c'];
-  $pendingOrders = (int)$pdo->query("SELECT COUNT(*) AS c FROM orders WHERE status='pending'")->fetch()['c'];
+  $result = mysqli_query($conn, "SELECT COUNT(*) AS c FROM products");
+  $totalProducts = (int)mysqli_fetch_assoc($result)['c'];
+  
+  $result = mysqli_query($conn, "SELECT COUNT(*) AS c FROM orders");
+  $totalOrders = (int)mysqli_fetch_assoc($result)['c'];
+  
+  $result = mysqli_query($conn, "SELECT COUNT(*) AS c FROM orders WHERE status='pending'");
+  $pendingOrders = (int)mysqli_fetch_assoc($result)['c'];
 
   // Get recent orders for the table
-  $recentOrders = admin_recent_orders($pdo, 20);
+  $recentOrders = admin_recent_orders($conn, 20);
 
   // Calculate total revenue (excluding cancelled orders)
-  $totalRevenue = (float)$pdo->query("SELECT COALESCE(SUM(total_amount), 0) AS r FROM orders WHERE status != 'cancelled'")->fetch()['r'];
+  $result = mysqli_query($conn, "SELECT COALESCE(SUM(total_amount), 0) AS r FROM orders WHERE status != 'cancelled'");
+  $totalRevenue = (float)mysqli_fetch_assoc($result)['r'];
 
   require __DIR__ . '/../view/admin/dashboard.php';
 }
 
 /**
  * Update order status (Admin action)
- * Called when admin changes order status dropdown
  * 
- * @param PDO $pdo - Database connection
+ * @param mysqli $conn - Database connection
  */
-function admin_update_order_status_action(PDO $pdo): void {
+function admin_update_order_status_action(mysqli $conn): void {
   $orderId = (int)($_POST['order_id'] ?? 0);
   $status = trim((string)($_POST['status'] ?? ''));
 
@@ -122,7 +127,7 @@ function admin_update_order_status_action(PDO $pdo): void {
   if ($orderId <= 0 || $status === '') return;
 
   try {
-    admin_update_order_status($pdo, $orderId, $status);
+    admin_update_order_status($conn, $orderId, $status);
     $_SESSION['flash'] = ['type' => 'success', 'message' => 'Order status updated.'];
   } catch (Throwable $e) {
     $_SESSION['flash'] = ['type' => 'error', 'message' => $e->getMessage()];
@@ -130,7 +135,7 @@ function admin_update_order_status_action(PDO $pdo): void {
 }
 
 /* -------- Admin Orders View -------- */
-function admin_orders_view(PDO $pdo, string $page): void {
+function admin_orders_view(mysqli $conn, string $page): void {
   $flash = flash_get();
   $search = trim((string)($_GET['search'] ?? ''));
   $statusFilter = trim((string)($_GET['status'] ?? ''));
@@ -145,34 +150,53 @@ function admin_orders_view(PDO $pdo, string $page): void {
   }
 
   // Get counts
-  $totalOrders = (int)$pdo->query("SELECT COUNT(*) AS c FROM orders")->fetch()['c'];
-  $pendingOrders = (int)$pdo->query("SELECT COUNT(*) AS c FROM orders WHERE status='pending'")->fetch()['c'];
-  $shippedOrders = (int)$pdo->query("SELECT COUNT(*) AS c FROM orders WHERE status='shipped'")->fetch()['c'];
-  $completedOrders = (int)$pdo->query("SELECT COUNT(*) AS c FROM orders WHERE status='delivered'")->fetch()['c'];
+  $result = mysqli_query($conn, "SELECT COUNT(*) AS c FROM orders");
+  $totalOrders = (int)mysqli_fetch_assoc($result)['c'];
+  
+  $result = mysqli_query($conn, "SELECT COUNT(*) AS c FROM orders WHERE status='pending'");
+  $pendingOrders = (int)mysqli_fetch_assoc($result)['c'];
+  
+  $result = mysqli_query($conn, "SELECT COUNT(*) AS c FROM orders WHERE status='shipped'");
+  $shippedOrders = (int)mysqli_fetch_assoc($result)['c'];
+  
+  $result = mysqli_query($conn, "SELECT COUNT(*) AS c FROM orders WHERE status='delivered'");
+  $completedOrders = (int)mysqli_fetch_assoc($result)['c'];
 
   // Build query
   $where = [];
   $params = [];
+  $types = "";
 
   if ($statusFilter !== '') {
     $where[] = "o.status = ?";
     $params[] = $statusFilter;
+    $types .= "s";
   }
 
   if ($search !== '') {
     $where[] = "(o.id LIKE ? OR u.name LIKE ? OR u.email LIKE ?)";
-    $params[] = "%$search%";
-    $params[] = "%$search%";
-    $params[] = "%$search%";
+    $searchTerm = "%$search%";
+    $params[] = $searchTerm;
+    $params[] = $searchTerm;
+    $params[] = $searchTerm;
+    $types .= "sss";
   }
 
   $whereClause = count($where) > 0 ? 'WHERE ' . implode(' AND ', $where) : '';
 
   // Count total for pagination
   $countSql = "SELECT COUNT(*) AS c FROM orders o LEFT JOIN users u ON o.user_id = u.id $whereClause";
-  $countSt = $pdo->prepare($countSql);
-  $countSt->execute($params);
-  $totalFiltered = (int)$countSt->fetch()['c'];
+  if (empty($params)) {
+    $result = mysqli_query($conn, $countSql);
+    $totalFiltered = (int)mysqli_fetch_assoc($result)['c'];
+  } else {
+    $stmt = mysqli_prepare($conn, $countSql);
+    mysqli_stmt_bind_param($stmt, $types, ...$params);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    $totalFiltered = (int)mysqli_fetch_assoc($result)['c'];
+    mysqli_stmt_close($stmt);
+  }
   $totalPages = max(1, (int)ceil($totalFiltered / $perPage));
 
   // Get orders
@@ -184,15 +208,24 @@ function admin_orders_view(PDO $pdo, string $page): void {
           $whereClause
           ORDER BY o.created_at DESC
           LIMIT $perPage OFFSET $offset";
-  $st = $pdo->prepare($sql);
-  $st->execute($params);
-  $orders = $st->fetchAll();
+  
+  if (empty($params)) {
+    $result = mysqli_query($conn, $sql);
+    $orders = mysqli_fetch_all($result, MYSQLI_ASSOC);
+  } else {
+    $stmt = mysqli_prepare($conn, $sql);
+    mysqli_stmt_bind_param($stmt, $types, ...$params);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    $orders = mysqli_fetch_all($result, MYSQLI_ASSOC);
+    mysqli_stmt_close($stmt);
+  }
 
   require __DIR__ . '/../view/admin/orders.php';
 }
 
 /* -------- Admin Customers View -------- */
-function admin_customers_view(PDO $pdo): void {
+function admin_customers_view(mysqli $conn): void {
   $flash = flash_get();
   $search = trim((string)($_GET['search'] ?? ''));
   $sort = trim((string)($_GET['sort'] ?? 'newest'));
@@ -200,20 +233,30 @@ function admin_customers_view(PDO $pdo): void {
   $perPage = 15;
 
   // Get stats
-  $totalCustomers = (int)$pdo->query("SELECT COUNT(*) AS c FROM users WHERE role='customer'")->fetch()['c'];
-  $newCustomersThisMonth = (int)$pdo->query("SELECT COUNT(*) AS c FROM users WHERE role='customer' AND created_at >= DATE_FORMAT(NOW(), '%Y-%m-01')")->fetch()['c'];
-  $customersWithOrders = (int)$pdo->query("SELECT COUNT(DISTINCT user_id) AS c FROM orders")->fetch()['c'];
-  $totalRevenue = (float)$pdo->query("SELECT COALESCE(SUM(total_amount), 0) AS r FROM orders WHERE status != 'cancelled'")->fetch()['r'];
+  $result = mysqli_query($conn, "SELECT COUNT(*) AS c FROM users WHERE role='customer'");
+  $totalCustomers = (int)mysqli_fetch_assoc($result)['c'];
+  
+  $result = mysqli_query($conn, "SELECT COUNT(*) AS c FROM users WHERE role='customer' AND created_at >= DATE_FORMAT(NOW(), '%Y-%m-01')");
+  $newCustomersThisMonth = (int)mysqli_fetch_assoc($result)['c'];
+  
+  $result = mysqli_query($conn, "SELECT COUNT(DISTINCT user_id) AS c FROM orders");
+  $customersWithOrders = (int)mysqli_fetch_assoc($result)['c'];
+  
+  $result = mysqli_query($conn, "SELECT COALESCE(SUM(total_amount), 0) AS r FROM orders WHERE status != 'cancelled'");
+  $totalRevenue = (float)mysqli_fetch_assoc($result)['r'];
 
   // Build query
   $where = ["u.role = 'customer'"];
   $params = [];
+  $types = "";
 
   if ($search !== '') {
     $where[] = "(u.name LIKE ? OR u.email LIKE ? OR u.phone LIKE ?)";
-    $params[] = "%$search%";
-    $params[] = "%$search%";
-    $params[] = "%$search%";
+    $searchTerm = "%$search%";
+    $params[] = $searchTerm;
+    $params[] = $searchTerm;
+    $params[] = $searchTerm;
+    $types .= "sss";
   }
 
   $whereClause = 'WHERE ' . implode(' AND ', $where);
@@ -226,9 +269,17 @@ function admin_customers_view(PDO $pdo): void {
 
   // Count total for pagination
   $countSql = "SELECT COUNT(*) AS c FROM users u $whereClause";
-  $countSt = $pdo->prepare($countSql);
-  $countSt->execute($params);
-  $totalFiltered = (int)$countSt->fetch()['c'];
+  if (empty($params)) {
+    $result = mysqli_query($conn, $countSql);
+    $totalFiltered = (int)mysqli_fetch_assoc($result)['c'];
+  } else {
+    $stmt = mysqli_prepare($conn, $countSql);
+    mysqli_stmt_bind_param($stmt, $types, ...$params);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    $totalFiltered = (int)mysqli_fetch_assoc($result)['c'];
+    mysqli_stmt_close($stmt);
+  }
   $totalPages = max(1, (int)ceil($totalFiltered / $perPage));
 
   // Get customers with order stats
@@ -240,19 +291,28 @@ function admin_customers_view(PDO $pdo): void {
           $whereClause
           ORDER BY $orderBy
           LIMIT $perPage OFFSET $offset";
-  $st = $pdo->prepare($sql);
-  $st->execute($params);
-  $customers = $st->fetchAll();
+  
+  if (empty($params)) {
+    $result = mysqli_query($conn, $sql);
+    $customers = mysqli_fetch_all($result, MYSQLI_ASSOC);
+  } else {
+    $stmt = mysqli_prepare($conn, $sql);
+    mysqli_stmt_bind_param($stmt, $types, ...$params);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    $customers = mysqli_fetch_all($result, MYSQLI_ASSOC);
+    mysqli_stmt_close($stmt);
+  }
 
   require __DIR__ . '/../view/admin/customers.php';
 }
 
-function admin_customer_add_view(PDO $pdo): void {
+function admin_customer_add_view(mysqli $conn): void {
   $flash = flash_get();
   require __DIR__ . '/../view/admin/customer_add.php';
 }
 
-function admin_customer_create_action(PDO $pdo): void {
+function admin_customer_create_action(mysqli $conn): void {
   $name = trim((string)($_POST['name'] ?? ''));
   $email = trim((string)($_POST['email'] ?? ''));
   $password = (string)($_POST['password'] ?? '');
@@ -265,27 +325,30 @@ function admin_customer_create_action(PDO $pdo): void {
   }
 
   // Check if email exists
-  $existing = user_find_by_email($pdo, $email);
+  $existing = user_find_by_email($conn, $email);
   if ($existing) {
     $_SESSION['flash'] = ['type' => 'error', 'message' => 'Email already exists.'];
     return;
   }
 
   try {
-    user_create($pdo, $name, $email, $password, $phone ?: null, $address ?: null);
+    user_create($conn, $name, $email, $password, $phone ?: null, $address ?: null);
     $_SESSION['flash'] = ['type' => 'success', 'message' => 'Customer created successfully.'];
   } catch (Throwable $e) {
     $_SESSION['flash'] = ['type' => 'error', 'message' => 'Failed to create customer.'];
   }
 }
 
-function admin_customer_delete_action(PDO $pdo): void {
+function admin_customer_delete_action(mysqli $conn): void {
   $customerId = (int)($_POST['customer_id'] ?? 0);
   if ($customerId <= 0) return;
 
   try {
-    $st = $pdo->prepare("DELETE FROM users WHERE id = ? AND role = 'customer'");
-    $st->execute([$customerId]);
+    $sql = "DELETE FROM users WHERE id = ? AND role = 'customer'";
+    $stmt = mysqli_prepare($conn, $sql);
+    mysqli_stmt_bind_param($stmt, "i", $customerId);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_close($stmt);
     $_SESSION['flash'] = ['type' => 'success', 'message' => 'Customer deleted successfully.'];
   } catch (Throwable $e) {
     $_SESSION['flash'] = ['type' => 'error', 'message' => 'Failed to delete customer.'];
@@ -293,7 +356,7 @@ function admin_customer_delete_action(PDO $pdo): void {
 }
 
 /* -------- Admin Employees View -------- */
-function admin_employees_view(PDO $pdo): void {
+function admin_employees_view(mysqli $conn): void {
   $flash = flash_get();
   $search = trim((string)($_GET['search'] ?? ''));
   $roleFilter = trim((string)($_GET['role'] ?? ''));
@@ -301,53 +364,79 @@ function admin_employees_view(PDO $pdo): void {
   $currentPage = max(1, (int)($_GET['p'] ?? 1));
   $perPage = 15;
 
-  // Get stats - employees are users with role != 'customer'
-  $totalEmployees = (int)$pdo->query("SELECT COUNT(*) AS c FROM users WHERE role != 'customer'")->fetch()['c'];
-  $activeEmployees = $totalEmployees; // All employees are active by default
-  $adminCount = (int)$pdo->query("SELECT COUNT(*) AS c FROM users WHERE role = 'admin'")->fetch()['c'];
-  $newThisMonth = (int)$pdo->query("SELECT COUNT(*) AS c FROM users WHERE role != 'customer' AND created_at >= DATE_FORMAT(NOW(), '%Y-%m-01')")->fetch()['c'];
+  // Get stats
+  $result = mysqli_query($conn, "SELECT COUNT(*) AS c FROM users WHERE role != 'customer'");
+  $totalEmployees = (int)mysqli_fetch_assoc($result)['c'];
+  $activeEmployees = $totalEmployees;
+  
+  $result = mysqli_query($conn, "SELECT COUNT(*) AS c FROM users WHERE role = 'admin'");
+  $adminCount = (int)mysqli_fetch_assoc($result)['c'];
+  
+  $result = mysqli_query($conn, "SELECT COUNT(*) AS c FROM users WHERE role != 'customer' AND created_at >= DATE_FORMAT(NOW(), '%Y-%m-01')");
+  $newThisMonth = (int)mysqli_fetch_assoc($result)['c'];
 
   // Build query
   $where = ["role != 'customer'"];
   $params = [];
+  $types = "";
 
   if ($roleFilter !== '') {
     $where[] = "role = ?";
     $params[] = $roleFilter;
+    $types .= "s";
   }
 
   if ($search !== '') {
     $where[] = "(name LIKE ? OR email LIKE ? OR phone LIKE ?)";
-    $params[] = "%$search%";
-    $params[] = "%$search%";
-    $params[] = "%$search%";
+    $searchTerm = "%$search%";
+    $params[] = $searchTerm;
+    $params[] = $searchTerm;
+    $params[] = $searchTerm;
+    $types .= "sss";
   }
 
   $whereClause = 'WHERE ' . implode(' AND ', $where);
 
   // Count total for pagination
   $countSql = "SELECT COUNT(*) AS c FROM users $whereClause";
-  $countSt = $pdo->prepare($countSql);
-  $countSt->execute($params);
-  $totalFiltered = (int)$countSt->fetch()['c'];
+  if (empty($params)) {
+    $result = mysqli_query($conn, $countSql);
+    $totalFiltered = (int)mysqli_fetch_assoc($result)['c'];
+  } else {
+    $stmt = mysqli_prepare($conn, $countSql);
+    mysqli_stmt_bind_param($stmt, $types, ...$params);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    $totalFiltered = (int)mysqli_fetch_assoc($result)['c'];
+    mysqli_stmt_close($stmt);
+  }
   $totalPages = max(1, (int)ceil($totalFiltered / $perPage));
 
   // Get employees
   $offset = ($currentPage - 1) * $perPage;
   $sql = "SELECT *, 'active' AS status, 'General' AS department FROM users $whereClause ORDER BY created_at DESC LIMIT $perPage OFFSET $offset";
-  $st = $pdo->prepare($sql);
-  $st->execute($params);
-  $employees = $st->fetchAll();
+  
+  if (empty($params)) {
+    $result = mysqli_query($conn, $sql);
+    $employees = mysqli_fetch_all($result, MYSQLI_ASSOC);
+  } else {
+    $stmt = mysqli_prepare($conn, $sql);
+    mysqli_stmt_bind_param($stmt, $types, ...$params);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    $employees = mysqli_fetch_all($result, MYSQLI_ASSOC);
+    mysqli_stmt_close($stmt);
+  }
 
   require __DIR__ . '/../view/admin/employees.php';
 }
 
-function admin_employee_add_view(PDO $pdo): void {
+function admin_employee_add_view(mysqli $conn): void {
   $flash = flash_get();
   require __DIR__ . '/../view/admin/employee_add.php';
 }
 
-function admin_employee_create_action(PDO $pdo): void {
+function admin_employee_create_action(mysqli $conn): void {
   $name = trim((string)($_POST['name'] ?? ''));
   $email = trim((string)($_POST['email'] ?? ''));
   $password = (string)($_POST['password'] ?? '');
@@ -361,7 +450,7 @@ function admin_employee_create_action(PDO $pdo): void {
   }
 
   // Check if email exists
-  $existing = user_find_by_email($pdo, $email);
+  $existing = user_find_by_email($conn, $email);
   if ($existing) {
     $_SESSION['flash'] = ['type' => 'error', 'message' => 'Email already exists.'];
     return;
@@ -374,15 +463,20 @@ function admin_employee_create_action(PDO $pdo): void {
 
   try {
     $hash = password_hash($password, PASSWORD_DEFAULT);
-    $st = $pdo->prepare("INSERT INTO users (name, email, password, phone, address, role) VALUES (?, ?, ?, ?, ?, ?)");
-    $st->execute([$name, $email, $hash, $phone ?: null, $address ?: null, $role]);
+    $sql = "INSERT INTO users (name, email, password, phone, address, role) VALUES (?, ?, ?, ?, ?, ?)";
+    $stmt = mysqli_prepare($conn, $sql);
+    $phoneVal = $phone ?: null;
+    $addressVal = $address ?: null;
+    mysqli_stmt_bind_param($stmt, "ssssss", $name, $email, $hash, $phoneVal, $addressVal, $role);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_close($stmt);
     $_SESSION['flash'] = ['type' => 'success', 'message' => 'Employee created successfully.'];
   } catch (Throwable $e) {
     $_SESSION['flash'] = ['type' => 'error', 'message' => 'Failed to create employee.'];
   }
 }
 
-function admin_employee_delete_action(PDO $pdo): void {
+function admin_employee_delete_action(mysqli $conn): void {
   $employeeId = (int)($_POST['employee_id'] ?? 0);
   if ($employeeId <= 0) return;
 
@@ -393,8 +487,11 @@ function admin_employee_delete_action(PDO $pdo): void {
   }
 
   try {
-    $st = $pdo->prepare("DELETE FROM users WHERE id = ? AND role != 'customer'");
-    $st->execute([$employeeId]);
+    $sql = "DELETE FROM users WHERE id = ? AND role != 'customer'";
+    $stmt = mysqli_prepare($conn, $sql);
+    mysqli_stmt_bind_param($stmt, "i", $employeeId);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_close($stmt);
     $_SESSION['flash'] = ['type' => 'success', 'message' => 'Employee deleted successfully.'];
   } catch (Throwable $e) {
     $_SESSION['flash'] = ['type' => 'error', 'message' => 'Failed to delete employee.'];
@@ -407,27 +504,30 @@ function admin_employee_delete_action(PDO $pdo): void {
 
 /**
  * Display staff dashboard
- * Shows order statistics and recent orders
  * 
- * @param PDO $pdo - Database connection
+ * @param mysqli $conn - Database connection
  */
-function staff_dashboard_view(PDO $pdo): void {
-  $cartCount = cart_count($pdo);
+function staff_dashboard_view(mysqli $conn): void {
+  $cartCount = cart_count($conn);
   $flash = flash_get();
 
-  // Get statistics for dashboard cards
-  $totalOrders = (int)$pdo->query("SELECT COUNT(*) AS c FROM orders")->fetch()['c'];
-  $pendingOrders = (int)$pdo->query("SELECT COUNT(*) AS c FROM orders WHERE status='pending'")->fetch()['c'];
-  $completedOrders = (int)$pdo->query("SELECT COUNT(*) AS c FROM orders WHERE status='delivered'")->fetch()['c'];
+  // Get statistics
+  $result = mysqli_query($conn, "SELECT COUNT(*) AS c FROM orders");
+  $totalOrders = (int)mysqli_fetch_assoc($result)['c'];
+  
+  $result = mysqli_query($conn, "SELECT COUNT(*) AS c FROM orders WHERE status='pending'");
+  $pendingOrders = (int)mysqli_fetch_assoc($result)['c'];
+  
+  $result = mysqli_query($conn, "SELECT COUNT(*) AS c FROM orders WHERE status='delivered'");
+  $completedOrders = (int)mysqli_fetch_assoc($result)['c'];
   
   // Get recent orders with customer names
-  $recentOrders = $pdo->query("
-    SELECT o.*, u.name AS customer_name 
-    FROM orders o 
-    LEFT JOIN users u ON o.user_id = u.id 
-    ORDER BY o.created_at DESC 
-    LIMIT 10
-  ")->fetchAll();
+  $result = mysqli_query($conn, "SELECT o.*, u.name AS customer_name 
+                                  FROM orders o 
+                                  LEFT JOIN users u ON o.user_id = u.id 
+                                  ORDER BY o.created_at DESC 
+                                  LIMIT 10");
+  $recentOrders = mysqli_fetch_all($result, MYSQLI_ASSOC);
 
   require __DIR__ . '/../view/staff/dashboard.php';
 }
@@ -435,9 +535,9 @@ function staff_dashboard_view(PDO $pdo): void {
 /**
  * Update order status (Staff action)
  * 
- * @param PDO $pdo - Database connection
+ * @param mysqli $conn - Database connection
  */
-function staff_update_order_status_action(PDO $pdo): void {
+function staff_update_order_status_action(mysqli $conn): void {
   $orderId = (int)($_POST['order_id'] ?? 0);
   $status = trim((string)($_POST['status'] ?? ''));
 
@@ -449,8 +549,11 @@ function staff_update_order_status_action(PDO $pdo): void {
   }
 
   try {
-    $st = $pdo->prepare("UPDATE orders SET status = ? WHERE id = ?");
-    $st->execute([$status, $orderId]);
+    $sql = "UPDATE orders SET status = ? WHERE id = ?";
+    $stmt = mysqli_prepare($conn, $sql);
+    mysqli_stmt_bind_param($stmt, "si", $status, $orderId);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_close($stmt);
     $_SESSION['flash'] = ['type' => 'success', 'message' => 'Order status updated.'];
   } catch (Throwable $e) {
     $_SESSION['flash'] = ['type' => 'error', 'message' => 'Failed to update order status.'];
@@ -460,11 +563,11 @@ function staff_update_order_status_action(PDO $pdo): void {
 /**
  * Display staff orders view with filtering
  * 
- * @param PDO $pdo - Database connection
+ * @param mysqli $conn - Database connection
  * @param string $page - Current page for filtering
  */
-function staff_orders_view(PDO $pdo, string $page): void {
-  $cartCount = cart_count($pdo);
+function staff_orders_view(mysqli $conn, string $page): void {
+  $cartCount = cart_count($conn);
   $flash = flash_get();
 
   // Determine filter based on page
@@ -476,16 +579,21 @@ function staff_orders_view(PDO $pdo, string $page): void {
   // Build query
   $sql = "SELECT o.*, u.name AS customer_name FROM orders o LEFT JOIN users u ON o.user_id = u.id";
   if ($statusFilter !== '') {
-    $sql .= " WHERE o.status = :status";
+    $sql .= " WHERE o.status = ?";
   }
   $sql .= " ORDER BY o.created_at DESC";
 
-  $st = $pdo->prepare($sql);
   if ($statusFilter !== '') {
-    $st->bindValue(':status', $statusFilter);
+    $stmt = mysqli_prepare($conn, $sql);
+    mysqli_stmt_bind_param($stmt, "s", $statusFilter);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    $orders = mysqli_fetch_all($result, MYSQLI_ASSOC);
+    mysqli_stmt_close($stmt);
+  } else {
+    $result = mysqli_query($conn, $sql);
+    $orders = mysqli_fetch_all($result, MYSQLI_ASSOC);
   }
-  $st->execute();
-  $orders = $st->fetchAll();
 
   require __DIR__ . '/../view/staff/orders.php';
 }

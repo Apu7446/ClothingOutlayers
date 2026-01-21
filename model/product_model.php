@@ -1,7 +1,7 @@
 <?php
 /**
  * ========================================
- * PRODUCT MODEL
+ * PRODUCT MODEL (MySQLi Procedural)
  * ========================================
  * This file contains all database queries related to products.
  * 
@@ -17,79 +17,88 @@ declare(strict_types=1);
 /**
  * Get all products with optional filtering
  * 
- * @param PDO $pdo - Database connection
+ * @param mysqli $conn - Database connection
  * @param string|null $category - Filter by category (Men/Women/Kids)
  * @param string|null $q - Search query (searches name and description)
  * @return array - Array of products matching the criteria
  */
-function product_get_all(PDO $pdo, ?string $category = null, ?string $q = null): array {
+function product_get_all(mysqli $conn, ?string $category = null, ?string $q = null): array {
   // Base SQL query
   $sql = "SELECT * FROM products";
-  $params = [];   // Parameters for prepared statement
-  $where = [];    // WHERE conditions
+  $where = [];
+  $params = [];
+  $types = "";
 
   // Add category filter if provided
   if ($category) {
     $where[] = "category = ?";
     $params[] = $category;
+    $types .= "s";
   }
   
   // Add search filter if provided
-  // LIKE with % searches for partial matches
   if ($q) {
     $where[] = "(name LIKE ? OR description LIKE ?)";
-    $params[] = "%{$q}%";  // %search% matches anywhere in the string
-    $params[] = "%{$q}%";
+    $searchTerm = "%{$q}%";
+    $params[] = $searchTerm;
+    $params[] = $searchTerm;
+    $types .= "ss";
   }
 
   // Add WHERE clause if there are conditions
-  if ($where) $sql .= " WHERE " . implode(" AND ", $where);
+  if ($where) {
+    $sql .= " WHERE " . implode(" AND ", $where);
+  }
   
   // Order by newest first
   $sql .= " ORDER BY id DESC";
 
-  // Execute and return results
-  $st = $pdo->prepare($sql);
-  $st->execute($params);
-  return $st->fetchAll();
+  // If no filters, use simple query
+  if (empty($params)) {
+    $result = mysqli_query($conn, $sql);
+    return mysqli_fetch_all($result, MYSQLI_ASSOC);
+  }
+
+  // Execute with prepared statement
+  $stmt = mysqli_prepare($conn, $sql);
+  mysqli_stmt_bind_param($stmt, $types, ...$params);
+  mysqli_stmt_execute($stmt);
+  $result = mysqli_stmt_get_result($stmt);
+  $products = mysqli_fetch_all($result, MYSQLI_ASSOC);
+  mysqli_stmt_close($stmt);
+  
+  return $products;
 }
 
 /**
  * Get a single product by its ID
- * Used for product detail page
  * 
- * @param PDO $pdo - Database connection
+ * @param mysqli $conn - Database connection
  * @param int $id - Product ID
  * @return array|null - Product data or null if not found
  */
-function product_get_by_id(PDO $pdo, int $id): ?array {
-  $st = $pdo->prepare("SELECT * FROM products WHERE id = ? LIMIT 1");
-  $st->execute([$id]);
-  $p = $st->fetch();
-  return $p ?: null;
+function product_get_by_id(mysqli $conn, int $id): ?array {
+  $sql = "SELECT * FROM products WHERE id = ? LIMIT 1";
+  $stmt = mysqli_prepare($conn, $sql);
+  mysqli_stmt_bind_param($stmt, "i", $id);
+  mysqli_stmt_execute($stmt);
+  $result = mysqli_stmt_get_result($stmt);
+  $product = mysqli_fetch_assoc($result);
+  mysqli_stmt_close($stmt);
+  return $product ?: null;
 }
 
 /**
  * Create a new product (Admin function)
  * 
- * @param PDO $pdo - Database connection
- * @param array $data - Product data array containing:
- *   - name: Product name (required)
- *   - description: Product description
- *   - price: Product price (required)
- *   - size: Available sizes
- *   - color: Available colors
- *   - category: Product category
- *   - image: Image file path
- *   - stock: Available quantity
+ * @param mysqli $conn - Database connection
+ * @param array $data - Product data array
  * @return int - The new product's ID
  */
-function product_create(PDO $pdo, array $data): int {
-  $st = $pdo->prepare("
-    INSERT INTO products (name,description,price,size,color,category,image,stock)
-    VALUES (?,?,?,?,?,?,?,?)
-  ");
-  $st->execute([
+function product_create(mysqli $conn, array $data): int {
+  $sql = "INSERT INTO products (name,description,price,size,color,category,image,stock) VALUES (?,?,?,?,?,?,?,?)";
+  $stmt = mysqli_prepare($conn, $sql);
+  mysqli_stmt_bind_param($stmt, "ssdssssi",
     $data['name'],
     $data['description'],
     $data['price'],
@@ -97,39 +106,42 @@ function product_create(PDO $pdo, array $data): int {
     $data['color'],
     $data['category'],
     $data['image'],
-    $data['stock'],
-  ]);
-  return (int)$pdo->lastInsertId();
+    $data['stock']
+  );
+  mysqli_stmt_execute($stmt);
+  $newId = (int)mysqli_insert_id($conn);
+  mysqli_stmt_close($stmt);
+  return $newId;
 }
 
 /**
  * Update basic product information (Admin function)
  * 
- * @param PDO $pdo - Database connection
+ * @param mysqli $conn - Database connection
  * @param int $id - Product ID to update
  * @param string $name - New product name
  * @param float $price - New price
  * @param int $stock - New stock quantity
  */
-function product_update_basic(PDO $pdo, int $id, string $name, float $price, int $stock): void {
-  $st = $pdo->prepare("UPDATE products SET name=?, price=?, stock=? WHERE id=?");
-  $st->execute([$name, $price, $stock, $id]);
+function product_update_basic(mysqli $conn, int $id, string $name, float $price, int $stock): void {
+  $sql = "UPDATE products SET name=?, price=?, stock=? WHERE id=?";
+  $stmt = mysqli_prepare($conn, $sql);
+  mysqli_stmt_bind_param($stmt, "sdii", $name, $price, $stock, $id);
+  mysqli_stmt_execute($stmt);
+  mysqli_stmt_close($stmt);
 }
 
 /**
  * Update full product information (Admin/Staff function)
  * 
- * @param PDO $pdo - Database connection
+ * @param mysqli $conn - Database connection
  * @param int $id - Product ID to update
  * @param array $data - Product data array
  */
-function product_update_full(PDO $pdo, int $id, array $data): void {
-  $st = $pdo->prepare("
-    UPDATE products 
-    SET name=?, description=?, price=?, size=?, color=?, category=?, stock=?
-    WHERE id=?
-  ");
-  $st->execute([
+function product_update_full(mysqli $conn, int $id, array $data): void {
+  $sql = "UPDATE products SET name=?, description=?, price=?, size=?, color=?, category=?, stock=? WHERE id=?";
+  $stmt = mysqli_prepare($conn, $sql);
+  mysqli_stmt_bind_param($stmt, "ssdsssis",
     $data['name'],
     $data['description'],
     $data['price'],
@@ -138,28 +150,36 @@ function product_update_full(PDO $pdo, int $id, array $data): void {
     $data['category'],
     $data['stock'],
     $id
-  ]);
+  );
+  mysqli_stmt_execute($stmt);
+  mysqli_stmt_close($stmt);
 }
 
 /**
  * Update product image
  * 
- * @param PDO $pdo - Database connection
+ * @param mysqli $conn - Database connection
  * @param int $id - Product ID
  * @param string $image - New image path
  */
-function product_update_image(PDO $pdo, int $id, string $image): void {
-  $st = $pdo->prepare("UPDATE products SET image=? WHERE id=?");
-  $st->execute([$image, $id]);
+function product_update_image(mysqli $conn, int $id, string $image): void {
+  $sql = "UPDATE products SET image=? WHERE id=?";
+  $stmt = mysqli_prepare($conn, $sql);
+  mysqli_stmt_bind_param($stmt, "si", $image, $id);
+  mysqli_stmt_execute($stmt);
+  mysqli_stmt_close($stmt);
 }
 
 /**
  * Delete a product (Admin function)
  * 
- * @param PDO $pdo - Database connection
+ * @param mysqli $conn - Database connection
  * @param int $id - Product ID to delete
  */
-function product_delete(PDO $pdo, int $id): void {
-  $st = $pdo->prepare("DELETE FROM products WHERE id = ?");
-  $st->execute([$id]);
+function product_delete(mysqli $conn, int $id): void {
+  $sql = "DELETE FROM products WHERE id = ?";
+  $stmt = mysqli_prepare($conn, $sql);
+  mysqli_stmt_bind_param($stmt, "i", $id);
+  mysqli_stmt_execute($stmt);
+  mysqli_stmt_close($stmt);
 }

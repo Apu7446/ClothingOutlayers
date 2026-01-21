@@ -30,7 +30,6 @@
   <!-- Tabs Navigation -->
   <div class="dashboard-tabs">
     <a href="?page=admin_dashboard&tab=overview" class="tab <?= $tab === 'overview' ? 'active' : '' ?>">📊 Overview</a>
-    <a href="?page=admin_dashboard&tab=recent_orders" class="tab <?= $tab === 'recent_orders' ? 'active' : '' ?>">📦 Recent Orders</a>
     <a href="?page=admin_dashboard&tab=manage_orders" class="tab <?= $tab === 'manage_orders' ? 'active' : '' ?>">🛒 Manage Orders</a>
     <a href="?page=admin_dashboard&tab=add_product" class="tab <?= $tab === 'add_product' ? 'active' : '' ?>">➕ Add Product</a>
     <a href="?page=admin_dashboard&tab=customers" class="tab <?= $tab === 'customers' ? 'active' : '' ?>">👥 Customers</a>
@@ -482,18 +481,6 @@
               </div>
               
               <div class="form-group">
-                <label>Department</label>
-                <select name="department">
-                  <option value="">Select Department</option>
-                  <option value="sales">Sales</option>
-                  <option value="support">Customer Support</option>
-                  <option value="logistics">Logistics</option>
-                  <option value="marketing">Marketing</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-group full-width">
               <label>Password *</label>
               <input type="password" name="staff_password" required placeholder="Enter password">
             </div>
