@@ -1,21 +1,4 @@
 <?php 
-/**
- * ========================================
- * REGISTRATION PAGE VIEW
- * ========================================
- * This page displays the registration form for new users.
- * 
- * Form Fields:
- * - Full Name (required)
- * - Email (required, must be unique)
- * - Password (required)
- * - Phone (optional)
- * - Address (optional)
- * 
- * Form submits to: index.php?page=register (POST)
- * Controller: user_register_action() in user_controller.php
- * New users are created with 'customer' role by default
- */
 require __DIR__ . '/header.php'; 
 ?>
 

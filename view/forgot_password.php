@@ -1,21 +1,6 @@
 <?php 
-/**
- * ========================================
- * FORGOT PASSWORD PAGE VIEW
- * ========================================
- * This page allows users to reset password using security question.
- * 
- * Steps:
- * 1. User enters their email
- * 2. System shows security question
- * 3. If answer is correct, user can set new password
- * 
- * Form submits to: index.php?page=forgot_password (POST method)
- * Controller: forgot_password_action() in user_controller.php
- */
 require __DIR__ . '/header.php'; 
 
-// Security questions mapping
 $securityQuestions = [
   'pet_name' => 'What is your pet\'s name?',
   'birth_city' => 'In which city were you born?',

@@ -1,23 +1,4 @@
 <?php 
-/**
- * ========================================
- * CART VIEW
- * ========================================
- * This page displays the user's shopping cart.
- * 
- * Features:
- * - List all cart items with product image, name, price
- * - Update quantity for each item
- * - Remove items from cart
- * - Show subtotal
- * - Checkout button
- * 
- * Variables available from controller:
- * - $items: Array of cart items with product details
- * - $subtotal: Total price of all items
- * - $cartCount: Number of items (for header)
- * - $flash: Flash message (success/error)
- */
 require __DIR__ . '/header.php'; 
 ?>
 

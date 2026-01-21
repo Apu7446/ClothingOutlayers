@@ -1,19 +1,4 @@
 <?php 
-/**
- * ========================================
- * STAFF ORDERS VIEW
- * ========================================
- * This page displays all orders for staff management.
- * 
- * Features:
- * - View all orders or filter by status
- * - Update order status
- * 
- * Variables available from controller:
- * - $orders: Array of orders
- * - $cartCount: Number of items (for header)
- * - $flash: Flash message (success/error)
- */
 require __DIR__ . '/../header.php'; 
 ?>
 

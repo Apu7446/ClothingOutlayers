@@ -1,17 +1,4 @@
 <?php 
-/**
- * ========================================
- * CHECKOUT VIEW
- * ========================================
- * This page has two sections:
- * 1. Checkout Form - Place new order
- * 2. My Orders - Show order history
- * 
- * Variables available from controller:
- * - $cartItems: Items in cart
- * - $subtotal: Total price
- * - $myOrders: User's past orders
- */
 require __DIR__ . '/header.php'; 
 ?>
 

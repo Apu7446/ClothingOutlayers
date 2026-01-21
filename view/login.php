@@ -1,16 +1,4 @@
 <?php 
-/**
- * ========================================
- * LOGIN PAGE VIEW
- * ========================================
- * This page displays the login form where users can:
- * 1. Select their role (Customer/Admin/Staff)
- * 2. Enter email and password
- * 3. Submit to login
- * 
- * Form submits to: index.php?page=login (POST method)
- * Controller: user_login_action() in user_controller.php
- */
 require __DIR__ . '/header.php'; 
 ?>
 

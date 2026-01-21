@@ -1,17 +1,4 @@
 <?php
-/**
- * ========================================
- * HEADER VIEW
- * ========================================
- * This file contains the header/navigation bar
- * that appears on every page of the website.
- * 
- * Features:
- * - Brand logo (OutLayers)
- * - Navigation menu (Home, Features, Products, etc.)
- * - User info display (name + role badge)
- * - Login/Register or Logout buttons
- */
 declare(strict_types=1);
 ?>
 <!doctype html>

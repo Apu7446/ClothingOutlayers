@@ -1,24 +1,4 @@
 <?php 
-/**
- * ========================================
- * PRODUCT DETAIL PAGE VIEW
- * ========================================
- * This page shows detailed information for a single product.
- * 
- * Features:
- * - Large product image
- * - Full description
- * - Size, Color selection
- * - Quantity input
- * - Add to Cart button
- * 
- * URL Parameter: ?id=123 (product ID)
- * 
- * Variables from controller:
- * - $product: Single product data array (or null if not found)
- * - $cartCount: Cart item count
- * - $flash: Flash messages
- */
 require __DIR__ . '/header.php'; 
 ?>
 

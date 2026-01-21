@@ -1,24 +1,4 @@
 <?php 
-/**
- * ========================================
- * PRODUCTS LISTING PAGE VIEW
- * ========================================
- * This page shows all products with search and filter options.
- * 
- * Features:
- * - Search by product name/description
- * - Filter by category (Men/Women/Kids)
- * - Product cards with add to cart functionality
- * 
- * URL Parameters:
- * - ?q=search_term (search query)
- * - ?category=Men|Women|Kids (category filter)
- * 
- * Variables from controller:
- * - $products: Array of filtered products
- * - $cartCount: Cart item count
- * - $flash: Flash messages
- */
 require __DIR__ . '/header.php'; 
 ?>
 

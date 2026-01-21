@@ -1,23 +1,4 @@
 <?php 
-/**
- * ========================================
- * CUSTOMER DASHBOARD VIEW
- * ========================================
- * This page displays the customer's profile and dashboard.
- * 
- * Features:
- * - Profile picture upload/update
- * - Edit personal information (name, phone, address)
- * - View order statistics
- * - View recent orders
- * 
- * Variables available from controller:
- * - $profile: User profile data
- * - $orders: User's order history
- * - $totalOrders: Total number of orders
- * - $pendingOrders: Number of pending orders
- * - $completedOrders: Number of completed orders
- */
 require __DIR__ . '/../header.php'; 
 ?>
 

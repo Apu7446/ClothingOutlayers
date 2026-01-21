@@ -1,18 +1,4 @@
 <?php
-/**
- * ========================================
- * FOOTER VIEW
- * ========================================
- * This file closes the HTML structure opened in header.php
- * 
- * Contains:
- * - Closing </main> tag (opened in header.php)
- * - Footer with copyright
- * - JavaScript file inclusion
- * - Closing </body> and </html> tags
- * 
- * This file is included at the bottom of every page view.
- */
 ?>
 
 <!-- Close main content container (opened in header.php) -->

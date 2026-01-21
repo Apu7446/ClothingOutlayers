@@ -1,22 +1,4 @@
 <?php 
-/**
- * ========================================
- * HOME PAGE VIEW
- * ========================================
- * This is the main landing page of the website.
- * 
- * Sections:
- * 1. Hero Section - Welcome message with call-to-action buttons
- * 2. Features Section - Why choose us (4 feature cards)
- * 3. Products Section - Featured products (first 6)
- * 4. About Us Section - Company story and mission
- * 5. Contact Us Section - Contact information
- * 
- * Variables from controller:
- * - $products: Array of featured products (6 max)
- * - $cartCount: Cart item count for header
- * - $flash: Flash messages
- */
 require __DIR__ . '/header.php'; 
 ?>
 

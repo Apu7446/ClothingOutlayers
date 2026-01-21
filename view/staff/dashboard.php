@@ -1,22 +1,4 @@
 <?php 
-/**
- * ========================================
- * STAFF DASHBOARD VIEW
- * ========================================
- * This page displays the staff dashboard.
- * Staff can view and manage orders assigned to them.
- * 
- * Features:
- * - View order statistics
- * - Manage pending orders
- * - Update order status
- * 
- * Variables available from controller:
- * - $totalOrders: Total orders count
- * - $pendingOrders: Pending orders count
- * - $completedOrders: Completed orders count
- * - $recentOrders: Array of recent orders
- */
 require __DIR__ . '/../header.php'; 
 ?>
 

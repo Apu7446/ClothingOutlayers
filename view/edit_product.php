@@ -1,18 +1,4 @@
 <?php 
-/**
- * ========================================
- * EDIT PRODUCT PAGE VIEW
- * ========================================
- * This page allows Admin/Staff to edit product details.
- * 
- * Features:
- * - Edit product name, price, stock, size, color, category
- * - Edit description
- * - Upload new product image
- * - Delete product
- * 
- * Access: Admin and Staff only
- */
 require __DIR__ . '/header.php'; 
 ?>
 
