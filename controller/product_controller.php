@@ -1,7 +1,7 @@
 <?php
 /**
  * ========================================
- * PRODUCT CONTROLLER
+ * PRODUCT CONTROLLER (MySQLi Procedural)
  * ========================================
  * This file handles all product-related operations:
  * 
@@ -21,16 +21,14 @@ declare(strict_types=1);
 
 /**
  * Display home page with featured products
- * Shows only first 6 products
  * 
- * @param PDO $pdo - Database connection
+ * @param mysqli $conn - Database connection
  */
-function product_home(PDO $pdo): void {
-  $cartCount = cart_count($pdo);
+function product_home(mysqli $conn): void {
+  $cartCount = cart_count($conn);
   $flash = flash_get();
   
-  // Get all products then take only first 6
-  $products = product_get_all($pdo, null, null);
+  $products = product_get_all($conn, null, null);
   $products = array_slice($products, 0, 6);
   
   require __DIR__ . '/../view/home.php';
@@ -38,28 +36,20 @@ function product_home(PDO $pdo): void {
 
 /**
  * Display products listing page
- * Supports search and category filtering
  * 
- * URL parameters:
- * - ?category=Men|Women|Kids (filter by category)
- * - ?q=search_term (search by name/description)
- * 
- * @param PDO $pdo - Database connection
+ * @param mysqli $conn - Database connection
  */
-function product_list(PDO $pdo): void {
-  $cartCount = cart_count($pdo);
+function product_list(mysqli $conn): void {
+  $cartCount = cart_count($conn);
   $flash = flash_get();
   
-  // Get filter parameters from URL
   $category = isset($_GET['category']) ? trim((string)$_GET['category']) : null;
   $q = isset($_GET['q']) ? trim((string)$_GET['q']) : null;
   
-  // Convert empty strings to null
   $category = $category !== '' ? $category : null;
   $q = $q !== '' ? $q : null;
 
-  // Get filtered products
-  $products = product_get_all($pdo, $category, $q);
+  $products = product_get_all($conn, $category, $q);
   
   require __DIR__ . '/../view/products.php';
 }
@@ -67,19 +57,14 @@ function product_list(PDO $pdo): void {
 /**
  * Display single product detail page
  * 
- * URL parameter: ?id=123 (product ID)
- * 
- * @param PDO $pdo - Database connection
+ * @param mysqli $conn - Database connection
  */
-function product_detail(PDO $pdo): void {
-  $cartCount = cart_count($pdo);
+function product_detail(mysqli $conn): void {
+  $cartCount = cart_count($conn);
   $flash = flash_get();
 
-  // Get product ID from URL
   $id = (int)($_GET['id'] ?? 0);
-  
-  // Fetch product if ID is valid
-  $product = $id > 0 ? product_get_by_id($pdo, $id) : null;
+  $product = $id > 0 ? product_get_by_id($conn, $id) : null;
 
   require __DIR__ . '/../view/product_detail.php';
 }
@@ -91,35 +76,32 @@ function product_detail(PDO $pdo): void {
 /**
  * Display add product form (Admin)
  * 
- * @param PDO $pdo - Database connection
+ * @param mysqli $conn - Database connection
  */
-function admin_add_product_view(PDO $pdo): void {
-  $cartCount = cart_count($pdo);
+function admin_add_product_view(mysqli $conn): void {
+  $cartCount = cart_count($conn);
   $flash = flash_get();
   require __DIR__ . '/../view/admin/add_product.php';
 }
 
 /**
  * Display all products for management (Admin)
- * Shows table with edit/delete options
  * 
- * @param PDO $pdo - Database connection
+ * @param mysqli $conn - Database connection
  */
-function admin_manage_products_view(PDO $pdo): void {
-  $cartCount = cart_count($pdo);
+function admin_manage_products_view(mysqli $conn): void {
+  $cartCount = cart_count($conn);
   $flash = flash_get();
-  $products = product_get_all($pdo, null, null);
+  $products = product_get_all($conn, null, null);
   require __DIR__ . '/../view/admin/manage_products.php';
 }
 
 /**
  * Handle new product creation (Admin)
- * Processes form submission with image upload
  * 
- * @param PDO $pdo - Database connection
+ * @param mysqli $conn - Database connection
  */
-function admin_product_create_action(PDO $pdo): void {
-  // Get form data
+function admin_product_create_action(mysqli $conn): void {
   $name = trim((string)($_POST['name'] ?? ''));
   $description = trim((string)($_POST['description'] ?? ''));
   $price = (float)($_POST['price'] ?? 0);
@@ -128,56 +110,44 @@ function admin_product_create_action(PDO $pdo): void {
   $category = trim((string)($_POST['category'] ?? ''));
   $stock = (int)($_POST['stock'] ?? 0);
 
-  // Validate required fields
   if ($name === '' || $price <= 0) {
     $_SESSION['flash'] = ['type' => 'error', 'message' => 'Name & valid price required.'];
     redirect('index.php?page=admin_add_product');
   }
 
-  // ========== IMAGE UPLOAD HANDLING ==========
+  // Image upload handling
   $imagePath = null;
   
-  // Check if an image was uploaded
   if (!empty($_FILES['image']['name'])) {
-    // Set upload directory
     $uploadDir = __DIR__ . '/../images/products/';
     
-    // Create directory if it doesn't exist
     if (!is_dir($uploadDir)) {
       mkdir($uploadDir, 0775, true);
     }
 
-    // Get uploaded file info
-    $tmp = $_FILES['image']['tmp_name'];           // Temporary file location
-    $original = basename((string)$_FILES['image']['name']);  // Original filename
-    $ext = strtolower(pathinfo($original, PATHINFO_EXTENSION)); // File extension
+    $tmp = $_FILES['image']['tmp_name'];
+    $original = basename((string)$_FILES['image']['name']);
+    $ext = strtolower(pathinfo($original, PATHINFO_EXTENSION));
     
-    // Allowed image types
     $allowed = ['jpg','jpeg','png','webp'];
 
-    // Validate file type
     if (!in_array($ext, $allowed, true)) {
       $_SESSION['flash'] = ['type' => 'error', 'message' => 'Image must be jpg/png/webp.'];
       redirect('index.php?page=admin_add_product');
     }
 
-    // Generate unique filename to prevent conflicts
-    // Format: p_timestamp_randomhex.extension
     $safeName = 'p_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
     $dest = $uploadDir . $safeName;
 
-    // Move uploaded file from temp to permanent location
     if (!move_uploaded_file($tmp, $dest)) {
       $_SESSION['flash'] = ['type' => 'error', 'message' => 'Image upload failed.'];
       redirect('index.php?page=admin_add_product');
     }
 
-    // Store relative path for database
     $imagePath = 'images/products/' . $safeName;
   }
 
-  // Create product in database
-  product_create($pdo, [
+  product_create($conn, [
     'name' => $name,
     'description' => $description !== '' ? $description : null,
     'price' => $price,
@@ -194,37 +164,33 @@ function admin_product_create_action(PDO $pdo): void {
 /**
  * Delete a product (Admin)
  * 
- * @param PDO $pdo - Database connection
+ * @param mysqli $conn - Database connection
  */
-function admin_product_delete_action(PDO $pdo): void {
+function admin_product_delete_action(mysqli $conn): void {
   $id = (int)($_POST['id'] ?? 0);
   if ($id <= 0) return;
   
-  product_delete($pdo, $id);
+  product_delete($conn, $id);
   $_SESSION['flash'] = ['type' => 'success', 'message' => 'Product deleted.'];
 }
 
 /**
  * Update product basic info (Admin)
- * Updates name, price, and stock
  * 
- * @param PDO $pdo - Database connection
+ * @param mysqli $conn - Database connection
  */
-function admin_product_update_action(PDO $pdo): void {
-  // Get form data
+function admin_product_update_action(mysqli $conn): void {
   $id = (int)($_POST['id'] ?? 0);
   $name = trim((string)($_POST['name'] ?? ''));
   $price = (float)($_POST['price'] ?? 0);
   $stock = (int)($_POST['stock'] ?? 0);
 
-  // Validate
   if ($id <= 0 || $name === '' || $price <= 0) {
     $_SESSION['flash'] = ['type' => 'error', 'message' => 'Invalid update data.'];
     return;
   }
 
-  // Update in database
-  product_update_basic($pdo, $id, $name, $price, $stock);
+  product_update_basic($conn, $id, $name, $price, $stock);
   $_SESSION['flash'] = ['type' => 'success', 'message' => 'Product updated.'];
 }
 
@@ -234,19 +200,18 @@ function admin_product_update_action(PDO $pdo): void {
 
 /**
  * Display edit product page
- * Accessible by Admin and Staff
  * 
- * @param PDO $pdo - Database connection
+ * @param mysqli $conn - Database connection
  */
-function edit_product_view(PDO $pdo): void {
-  $cartCount = cart_count($pdo);
+function edit_product_view(mysqli $conn): void {
+  $cartCount = cart_count($conn);
   $flash = flash_get();
   
   $id = (int)($_GET['id'] ?? 0);
   $product = null;
   
   if ($id > 0) {
-    $product = product_get_by_id($pdo, $id);
+    $product = product_get_by_id($conn, $id);
   }
   
   require __DIR__ . '/../view/edit_product.php';
@@ -255,9 +220,9 @@ function edit_product_view(PDO $pdo): void {
 /**
  * Process edit product form submission
  * 
- * @param PDO $pdo - Database connection
+ * @param mysqli $conn - Database connection
  */
-function edit_product_action(PDO $pdo): void {
+function edit_product_action(mysqli $conn): void {
   $id = (int)($_POST['product_id'] ?? 0);
   
   if ($id <= 0) {
@@ -265,7 +230,6 @@ function edit_product_action(PDO $pdo): void {
     redirect('index.php?page=home');
   }
   
-  // Get form data
   $name = trim((string)($_POST['name'] ?? ''));
   $price = (float)($_POST['price'] ?? 0);
   $stock = (int)($_POST['stock'] ?? 0);
@@ -274,13 +238,11 @@ function edit_product_action(PDO $pdo): void {
   $color = trim((string)($_POST['color'] ?? ''));
   $description = trim((string)($_POST['description'] ?? ''));
   
-  // Validate
   if ($name === '' || $price <= 0 || $category === '' || $size === '' || $color === '') {
     $_SESSION['flash'] = ['type' => 'error', 'message' => 'Please fill all required fields.'];
     redirect('index.php?page=edit_product&id=' . $id);
   }
   
-  // Update product data
   $data = [
     'name' => $name,
     'description' => $description,
@@ -291,7 +253,7 @@ function edit_product_action(PDO $pdo): void {
     'stock' => $stock
   ];
   
-  product_update_full($pdo, $id, $data);
+  product_update_full($conn, $id, $data);
   
   // Handle image upload if provided
   if (isset($_FILES['product_image']) && $_FILES['product_image']['size'] > 0) {
@@ -307,7 +269,7 @@ function edit_product_action(PDO $pdo): void {
       $new_filename = 'product_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $file_ext;
       if (move_uploaded_file($_FILES['product_image']['tmp_name'], $upload_dir . $new_filename)) {
         $image_path = 'images/products/' . $new_filename;
-        product_update_image($pdo, $id, $image_path);
+        product_update_image($conn, $id, $image_path);
       }
     }
   }
@@ -319,9 +281,9 @@ function edit_product_action(PDO $pdo): void {
 /**
  * Delete a product
  * 
- * @param PDO $pdo - Database connection
+ * @param mysqli $conn - Database connection
  */
-function delete_product_action(PDO $pdo): void {
+function delete_product_action(mysqli $conn): void {
   $id = (int)($_GET['id'] ?? 0);
   
   if ($id <= 0) {
@@ -329,7 +291,7 @@ function delete_product_action(PDO $pdo): void {
     redirect('index.php?page=home');
   }
   
-  product_delete($pdo, $id);
+  product_delete($conn, $id);
   $_SESSION['flash'] = ['type' => 'success', 'message' => 'Product deleted successfully!'];
   redirect('index.php?page=home');
 }

@@ -1,36 +1,60 @@
+-- ========================================
+-- CLOTHING OUTLAYERS - DATABASE SCHEMA
+-- ========================================
+-- Database: clothing_db
+-- Last Updated: 2026-01-21
+-- ========================================
+
 CREATE DATABASE IF NOT EXISTS clothing_db
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
 
 USE clothing_db;
 
+-- ========================================
+-- USERS TABLE
+-- ========================================
+-- Stores all user accounts (customers, staff, admin)
+-- security_question & security_answer used for password recovery
 CREATE TABLE IF NOT EXISTS users (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(100) NOT NULL,
   email VARCHAR(100) NOT NULL UNIQUE,
   password VARCHAR(255) NOT NULL,
-  phone VARCHAR(15),
-  address TEXT,
+  phone VARCHAR(15) DEFAULT NULL,
+  address TEXT DEFAULT NULL,
   profile_image VARCHAR(255) DEFAULT NULL,
   role ENUM('customer','admin','staff') DEFAULT 'customer',
   security_question VARCHAR(255) DEFAULT NULL,
   security_answer VARCHAR(255) DEFAULT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_email (email),
+  INDEX idx_role (role)
 );
 
+-- ========================================
+-- PRODUCTS TABLE
+-- ========================================
+-- Stores all product information
 CREATE TABLE IF NOT EXISTS products (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(200) NOT NULL,
-  description TEXT,
+  description TEXT DEFAULT NULL,
   price DECIMAL(10,2) NOT NULL,
-  size VARCHAR(20),
-  color VARCHAR(50),
-  category VARCHAR(100),
-  image VARCHAR(255),
+  size VARCHAR(20) DEFAULT NULL,
+  color VARCHAR(50) DEFAULT NULL,
+  category VARCHAR(100) DEFAULT NULL,
+  image VARCHAR(255) DEFAULT NULL,
   stock INT DEFAULT 0,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_category (category),
+  INDEX idx_name (name)
 );
 
+-- ========================================
+-- CART TABLE
+-- ========================================
+-- Shopping cart items for logged-in users
 CREATE TABLE IF NOT EXISTS cart (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
@@ -42,17 +66,28 @@ CREATE TABLE IF NOT EXISTS cart (
   UNIQUE KEY uniq_user_product (user_id, product_id)
 );
 
+-- ========================================
+-- ORDERS TABLE
+-- ========================================
+-- Main order information
 CREATE TABLE IF NOT EXISTS orders (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
   total_amount DECIMAL(10,2) NOT NULL,
   status ENUM('pending','confirmed','shipped','delivered','cancelled') DEFAULT 'pending',
-  shipping_address TEXT,
-  payment_method VARCHAR(50),
+  shipping_address TEXT DEFAULT NULL,
+  payment_method VARCHAR(50) DEFAULT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT fk_orders_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  CONSTRAINT fk_orders_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_status (status),
+  INDEX idx_user_id (user_id)
 );
 
+-- ========================================
+-- ORDER_ITEMS TABLE
+-- ========================================
+-- Individual products in each order
+-- Stores snapshot of price at time of order
 CREATE TABLE IF NOT EXISTS order_items (
   id INT AUTO_INCREMENT PRIMARY KEY,
   order_id INT NOT NULL,
@@ -60,23 +95,16 @@ CREATE TABLE IF NOT EXISTS order_items (
   quantity INT NOT NULL,
   price DECIMAL(10,2) NOT NULL,
   CONSTRAINT fk_orderitems_order FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
-  CONSTRAINT fk_orderitems_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+  CONSTRAINT fk_orderitems_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+  INDEX idx_order_id (order_id)
 );
 
--- Password Reset Tokens table
--- Used for "Forgot Password" feature
-CREATE TABLE IF NOT EXISTS password_reset_tokens (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  user_id INT NOT NULL,
-  token VARCHAR(64) NOT NULL UNIQUE,
-  expires_at DATETIME NOT NULL,
-  used TINYINT(1) DEFAULT 0,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT fk_reset_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
+-- ========================================
+-- DEFAULT DATA
+-- ========================================
 
--- Default admin (password plain "123456" রাখা হলো যাতে basic setup এ কাজ করে)
--- Login code first-time এ এটাকে auto-hash করে update করে দিবে।
+-- Default Admin User
+-- Password: 123456 (plain text - will be auto-hashed on first login)
 INSERT INTO users (name, email, password, role)
 VALUES ('Admin', 'admin@gmail.com', '123456', 'admin')
 ON DUPLICATE KEY UPDATE email=email;
