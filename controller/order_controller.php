@@ -252,11 +252,6 @@ function admin_customer_create_action(mysqli $conn): void {
     return;
   }
 
-  // Check if email exists
-  $existing = user_find_by_email($conn, $email);
-  if ($existing) {
-    $_SESSION['flash'] = ['type' => 'error', 'message' => 'Email already exists.'];
-    return;
   $existing = user_find_by_email($conn, $email);
   if ($existing) {
     $_SESSION['flash'] = ['type' => 'error', 'message' => 'Email already exists.'];
