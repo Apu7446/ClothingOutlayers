@@ -1,14 +1,13 @@
 <?php
 /**
  * ========================================
- * DATABASE CONNECTION MODEL
+ * DATABASE CONNECTION MODEL (MySQLi)
  * ========================================
  * This file handles the database connection.
- * It creates a PDO (PHP Data Objects) connection
- * to the MySQL database.
+ * It creates a MySQLi connection to the MySQL database.
  * 
- * PDO is a secure way to connect to databases
- * and prevents SQL injection attacks.
+ * MySQLi is a MySQL-specific extension for PHP.
+ * We're using procedural style for simplicity.
  */
 declare(strict_types=1);
 
@@ -19,14 +18,16 @@ declare(strict_types=1);
  * If called multiple times, returns the same connection.
  * This saves resources and improves performance.
  * 
- * @return PDO - Database connection object
+ * @return mysqli - Database connection object
  */
-function db(): PDO {
+function db(): mysqli {
   // Static variable - keeps its value between function calls
-  static $pdo = null;
+  static $conn = null;
   
-  // If connection already exists, return it (don't create new one)
-  if ($pdo instanceof PDO) return $pdo;
+  // If connection already exists and is valid, return it
+  if ($conn instanceof mysqli && mysqli_ping($conn)) {
+    return $conn;
+  }
 
   // Database configuration
   $host = 'localhost';      // Server address (localhost for XAMPP)
@@ -34,17 +35,16 @@ function db(): PDO {
   $user = 'root';           // MySQL username (default for XAMPP)
   $pass = '';               // MySQL password (empty for XAMPP) <-- change this in production
 
-  // DSN (Data Source Name) - Connection string for MySQL
-  // charset=utf8mb4 supports emojis and all special characters
-  $dsn = "mysql:host={$host};dbname={$dbname};charset=utf8mb4";
-
-  // Create new PDO connection with options
-  $pdo = new PDO($dsn, $user, $pass, [
-    // ERRMODE_EXCEPTION: Throw exceptions on errors (easier debugging)
-    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-    // FETCH_ASSOC: Return results as associative arrays (column names as keys)
-    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-  ]);
-
-  return $pdo;
+  // Create new MySQLi connection
+  $conn = mysqli_connect($host, $user, $pass, $dbname);
+  
+  // Check connection - die if failed
+  if (!$conn) {
+    die("Connection failed: " . mysqli_connect_error());
+  }
+  
+  // Set charset to utf8mb4 (supports emojis and all special characters)
+  mysqli_set_charset($conn, 'utf8mb4');
+  
+  return $conn;
 }

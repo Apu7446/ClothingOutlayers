@@ -41,7 +41,7 @@ require_once __DIR__ . '/controller/order_controller.php';    // Place orders
 require_once __DIR__ . '/controller/admin_controller.php';    // Admin functions
 
 // Get database connection object
-$pdo = db();
+$conn = db();
 
 /* ========================================
    HELPER FUNCTIONS
@@ -142,12 +142,12 @@ function flash_get(): ?array {
 
 /**
  * Get number of items in user's cart
- * @param PDO $pdo - Database connection
+ * @param mysqli $conn - Database connection
  * @return int - Number of cart items
  */
-function cart_count(PDO $pdo): int {
+function cart_count(mysqli $conn): int {
   if (!is_logged_in()) return 0;  // Not logged in = 0 items
-  return cart_count_items($pdo, (int)$_SESSION['user']['id']);
+  return cart_count_items($conn, (int)$_SESSION['user']['id']);
 }
 
 /* ========================================
@@ -161,15 +161,15 @@ $page = $_GET['page'] ?? 'home';
 
 switch ($page) {
   case 'home':
-    product_home($pdo);
+    product_home($conn);
     break;
 
   case 'products':
-    product_list($pdo);
+    product_list($conn);
     break;
 
   case 'product':
-    product_detail($pdo);
+    product_detail($conn);
     break;
 
   /* -------- AJAX Add to Cart -------- */
@@ -184,8 +184,8 @@ switch ($page) {
       exit;
     }
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      cart_add_action($pdo);
-      $count = cart_count($pdo);
+      cart_add_action($conn);
+      $count = cart_count($conn);
       echo json_encode(['success' => true, 'message' => 'Added to cart!', 'count' => $count]);
     } else {
       echo json_encode(['success' => false, 'message' => 'Invalid request']);
@@ -199,49 +199,49 @@ switch ($page) {
       
       if ($action === 'add') {
         $returnTo = $_POST['return_to'] ?? 'cart';
-        cart_add_action($pdo);
+        cart_add_action($conn);
         redirect('index.php?page=' . $returnTo);
       }
       if ($action === 'update') {
-        cart_update_action($pdo);
+        cart_update_action($conn);
         redirect('index.php?page=cart');
       }
       if ($action === 'remove') {
-        cart_remove_action($pdo);
+        cart_remove_action($conn);
         redirect('index.php?page=cart');
       }
       if ($action === 'clear') {
-        cart_clear_action($pdo);
+        cart_clear_action($conn);
         redirect('index.php?page=cart');
       }
       redirect('index.php?page=cart');
     }
-    cart_view($pdo);
+    cart_view($conn);
     break;
 
   case 'checkout':
     require_login();
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && (($_GET['action'] ?? '') === 'place')) {
-      order_place_action($pdo);
+      order_place_action($conn);
       redirect('index.php?page=checkout');
     }
-    checkout_view($pdo);
+    checkout_view($conn);
     break;
 
   case 'login':
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      user_login_action($pdo);
+      user_login_action($conn);
       redirect('index.php?page=home');
     }
-    user_login_view($pdo);
+    user_login_view($conn);
     break;
 
   case 'register':
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      user_register_action($pdo);
+      user_register_action($conn);
       redirect('index.php?page=login');
     }
-    user_register_view($pdo);
+    user_register_view($conn);
     break;
 
   case 'logout':
@@ -252,16 +252,14 @@ switch ($page) {
   /* -------- Forgot Password / Reset Password -------- */
   case 'forgot_password':
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      forgot_password_action($pdo);
+      forgot_password_action($conn);
     }
-    forgot_password_view($pdo);
+    forgot_password_view($conn);
     break;
 
   case 'reset_password':
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      reset_password_action($pdo);
-    }
-    reset_password_view($pdo);
+    // Token-based reset removed - redirect to security question method
+    redirect('index.php?page=forgot_password');
     break;
 
   /* -------- customer dashboard -------- */
@@ -275,14 +273,14 @@ switch ($page) {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $action = $_GET['action'] ?? '';
       if ($action === 'update_profile') {
-        customer_update_profile_action($pdo);
+        customer_update_profile_action($conn);
       }
       if ($action === 'update_image') {
-        customer_update_image_action($pdo);
+        customer_update_image_action($conn);
       }
       redirect('index.php?page=customer_dashboard');
     }
-    customer_dashboard_view($pdo);
+    customer_dashboard_view($conn);
     break;
 
   /* -------- admin -------- */
@@ -341,21 +339,21 @@ switch ($page) {
   case 'admin_add_product':
     require_admin();
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && (($_GET['action'] ?? '') === 'create')) {
-      admin_product_create_action($pdo);
+      admin_product_create_action($conn);
       redirect('index.php?page=admin_manage_products');
     }
-    admin_add_product_view($pdo);
+    admin_add_product_view($conn);
     break;
 
   case 'admin_manage_products':
     require_admin();
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $action = $_GET['action'] ?? '';
-      if ($action === 'delete') admin_product_delete_action($pdo);
-      if ($action === 'update') admin_product_update_action($pdo);
+      if ($action === 'delete') admin_product_delete_action($conn);
+      if ($action === 'update') admin_product_update_action($conn);
       redirect('index.php?page=admin_manage_products');
     }
-    admin_manage_products_view($pdo);
+    admin_manage_products_view($conn);
     break;
 
   /* -------- Edit Product (Admin/Staff) -------- */
@@ -366,9 +364,9 @@ switch ($page) {
       redirect('index.php?page=home');
     }
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      edit_product_action($pdo);
+      edit_product_action($conn);
     }
-    edit_product_view($pdo);
+    edit_product_view($conn);
     break;
 
   case 'delete_product':
@@ -377,7 +375,7 @@ switch ($page) {
       $_SESSION['flash'] = ['type' => 'error', 'message' => 'Access denied. Admin or Staff only.'];
       redirect('index.php?page=home');
     }
-    delete_product_action($pdo);
+    delete_product_action($conn);
     break;
 
   /* -------- admin orders -------- */
@@ -386,70 +384,70 @@ switch ($page) {
   case 'admin_orders_completed':
     require_admin();
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && (($_GET['action'] ?? '') === 'update_status')) {
-      admin_update_order_status_action($pdo);
+      admin_update_order_status_action($conn);
       redirect('index.php?page=' . $page);
     }
-    admin_orders_view($pdo, $page);
+    admin_orders_view($conn, $page);
     break;
 
   /* -------- admin customers -------- */
   case 'admin_customers':
     require_admin();
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && (($_GET['action'] ?? '') === 'delete')) {
-      admin_customer_delete_action($pdo);
+      admin_customer_delete_action($conn);
       redirect('index.php?page=admin_customers');
     }
-    admin_customers_view($pdo);
+    admin_customers_view($conn);
     break;
 
   case 'admin_customer_add':
     require_admin();
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && (($_GET['action'] ?? '') === 'create')) {
-      admin_customer_create_action($pdo);
+      admin_customer_create_action($conn);
       redirect('index.php?page=admin_customers');
     }
-    admin_customer_add_view($pdo);
+    admin_customer_add_view($conn);
     break;
 
   /* -------- admin employees -------- */
   case 'admin_employees':
     require_admin();
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && (($_GET['action'] ?? '') === 'delete')) {
-      admin_employee_delete_action($pdo);
+      admin_employee_delete_action($conn);
       redirect('index.php?page=admin_employees');
     }
-    admin_employees_view($pdo);
+    admin_employees_view($conn);
     break;
 
   case 'admin_employee_add':
     require_admin();
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && (($_GET['action'] ?? '') === 'create')) {
-      admin_employee_create_action($pdo);
+      admin_employee_create_action($conn);
       redirect('index.php?page=admin_employees');
     }
-    admin_employee_add_view($pdo);
+    admin_employee_add_view($conn);
     break;
 
   /* -------- staff -------- */
   case 'staff_dashboard':
     require_staff();
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && (($_GET['action'] ?? '') === 'update_status')) {
-      staff_update_order_status_action($pdo);
+      staff_update_order_status_action($conn);
       redirect('index.php?page=staff_dashboard');
     }
-    staff_dashboard_view($pdo);
+    staff_dashboard_view($conn);
     break;
 
   case 'staff_orders':
   case 'staff_orders_pending':
     require_staff();
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && (($_GET['action'] ?? '') === 'update_status')) {
-      staff_update_order_status_action($pdo);
+      staff_update_order_status_action($conn);
       redirect('index.php?page=' . $page);
     }
-    staff_orders_view($pdo, $page);
+    staff_orders_view($conn, $page);
     break;
 
   default:
-    product_home($pdo);
+    product_home($conn);
 }
