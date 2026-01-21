@@ -23,6 +23,9 @@ function user_find_by_id(mysqli $conn, int $id): ?array {
   return $user ?: null;
 }
 
+function user_create(mysqli $conn, string $name, string $email, string $password, ?string $phone, ?string $address): int {
+  $hash = password_hash($password, PASSWORD_DEFAULT);
+
   $sql = "INSERT INTO users (name,email,password,phone,address,role) VALUES (?,?,?,?,?,'customer')";
   $stmt = mysqli_prepare($conn, $sql);
   mysqli_stmt_bind_param($stmt, "sssss", $name, $email, $hash, $phone, $address);

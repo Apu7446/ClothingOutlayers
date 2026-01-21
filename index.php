@@ -164,7 +164,7 @@ switch ($page) {
     redirect('index.php?page=home');
     break;
 
-  /* -------- Forgot Password / Reset Password -------- */
+  case 'forgot_password':
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       forgot_password_action($conn);
     }
@@ -172,15 +172,14 @@ switch ($page) {
     break;
 
   case 'reset_password':
-    // Token-based reset removed - redirect to security question method
-    redirect('index.php?page=forgot_password');
     redirect('index.php?page=forgot_password');
     break;
 
-    // Only customers can access
+  case 'customer_dashboard':
     if (!is_customer()) {
       $_SESSION['flash'] = ['type' => 'error', 'message' => 'Customer access only.'];
       redirect('index.php?page=home');
+    }
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $action = $_GET['action'] ?? '';
       if ($action === 'update_profile') {
@@ -268,10 +267,11 @@ switch ($page) {
 
   /* -------- Edit Product (Admin/Staff) -------- */
   case 'edit_product':
-    // Both admin and staff can edit products
     if (!is_admin() && !is_staff()) {
       $_SESSION['flash'] = ['type' => 'error', 'message' => 'Access denied. Admin or Staff only.'];
-  case 'edit_product':) {
+      redirect('index.php?page=home');
+    }
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       edit_product_action($conn);
     }
     edit_product_view($conn);
@@ -285,7 +285,7 @@ switch ($page) {
     }
     delete_product_action($conn);
     break;
- -------- admin orders -------- */
+
   case 'admin_orders':
   case 'admin_orders_pending':
   case 'admin_orders_completed':

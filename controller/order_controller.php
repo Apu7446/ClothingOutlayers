@@ -339,7 +339,12 @@ function admin_employees_view(mysqli $conn): void {
     mysqli_stmt_close($stmt);
   }
   $totalPages = max(1, (int)ceil($totalFiltered / $perPage));
-li_query($conn, $sql);
+
+  $offset = ($currentPage - 1) * $perPage;
+  $sql = "SELECT *, 'active' AS status, 'General' AS department FROM users $whereClause ORDER BY created_at DESC LIMIT $perPage OFFSET $offset";
+  
+  if (empty($params)) {
+    $result = mysqli_query($conn, $sql);
     $employees = mysqli_fetch_all($result, MYSQLI_ASSOC);
   } else {
     $stmt = mysqli_prepare($conn, $sql);
@@ -478,6 +483,12 @@ function staff_orders_view(mysqli $conn, string $page): void {
   if ($page === 'staff_orders_pending') {
     $statusFilter = 'pending';
   }
+
+  $sql = "SELECT o.*, u.name AS customer_name FROM orders o LEFT JOIN users u ON o.user_id = u.id";
+  if ($statusFilter !== '') {
+    $sql .= " WHERE o.status = ?";
+  }
+  $sql .= " ORDER BY o.created_at DESC";
 
   if ($statusFilter !== '') {
     $stmt = mysqli_prepare($conn, $sql);
