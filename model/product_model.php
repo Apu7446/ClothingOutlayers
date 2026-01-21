@@ -1,42 +1,18 @@
 <?php
-/**
- * ========================================
- * PRODUCT MODEL (MySQLi Procedural)
- * ========================================
- * This file contains all database queries related to products.
- * 
- * Functions:
- * - product_get_all(): Get all products (with optional filters)
- * - product_get_by_id(): Get single product by ID
- * - product_create(): Add new product
- * - product_update_basic(): Update product details
- * - product_delete(): Delete a product
- */
 declare(strict_types=1);
 
-/**
- * Get all products with optional filtering
- * 
- * @param mysqli $conn - Database connection
- * @param string|null $category - Filter by category (Men/Women/Kids)
- * @param string|null $q - Search query (searches name and description)
- * @return array - Array of products matching the criteria
- */
 function product_get_all(mysqli $conn, ?string $category = null, ?string $q = null): array {
-  // Base SQL query
   $sql = "SELECT * FROM products";
   $where = [];
   $params = [];
   $types = "";
 
-  // Add category filter if provided
   if ($category) {
     $where[] = "category = ?";
     $params[] = $category;
     $types .= "s";
   }
   
-  // Add search filter if provided
   if ($q) {
     $where[] = "(name LIKE ? OR description LIKE ?)";
     $searchTerm = "%{$q}%";
@@ -45,21 +21,17 @@ function product_get_all(mysqli $conn, ?string $category = null, ?string $q = nu
     $types .= "ss";
   }
 
-  // Add WHERE clause if there are conditions
   if ($where) {
     $sql .= " WHERE " . implode(" AND ", $where);
   }
   
-  // Order by newest first
   $sql .= " ORDER BY id DESC";
 
-  // If no filters, use simple query
   if (empty($params)) {
     $result = mysqli_query($conn, $sql);
     return mysqli_fetch_all($result, MYSQLI_ASSOC);
   }
 
-  // Execute with prepared statement
   $stmt = mysqli_prepare($conn, $sql);
   mysqli_stmt_bind_param($stmt, $types, ...$params);
   mysqli_stmt_execute($stmt);
@@ -70,13 +42,6 @@ function product_get_all(mysqli $conn, ?string $category = null, ?string $q = nu
   return $products;
 }
 
-/**
- * Get a single product by its ID
- * 
- * @param mysqli $conn - Database connection
- * @param int $id - Product ID
- * @return array|null - Product data or null if not found
- */
 function product_get_by_id(mysqli $conn, int $id): ?array {
   $sql = "SELECT * FROM products WHERE id = ? LIMIT 1";
   $stmt = mysqli_prepare($conn, $sql);

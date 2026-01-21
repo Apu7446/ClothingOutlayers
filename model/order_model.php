@@ -1,29 +1,6 @@
 <?php
-/**
- * ========================================
- * ORDER MODEL (MySQLi Procedural)
- * ========================================
- * This file contains all database queries related to orders.
- * 
- * Order Flow:
- * 1. Customer adds items to cart
- * 2. Customer goes to checkout
- * 3. order_create_from_cart() creates order from cart items
- * 4. Cart is cleared, stock is reduced
- * 5. Admin can view and update order status
- * 
- * Order Statuses: pending -> confirmed -> shipped -> delivered
- *                 (can also be cancelled at any point)
- */
 declare(strict_types=1);
 
-/**
- * Get all orders for a specific user
- * 
- * @param mysqli $conn - Database connection
- * @param int $userId - User's ID
- * @return array - Array of user's orders (newest first)
- */
 function orders_by_user(mysqli $conn, int $userId): array {
   $sql = "SELECT * FROM orders WHERE user_id=? ORDER BY id DESC";
   $stmt = mysqli_prepare($conn, $sql);
@@ -35,13 +12,6 @@ function orders_by_user(mysqli $conn, int $userId): array {
   return $orders;
 }
 
-/**
- * Get all items in a specific order
- * 
- * @param mysqli $conn - Database connection
- * @param int $orderId - Order ID
- * @return array - Array of order items with product details
- */
 function order_items_by_order(mysqli $conn, int $orderId): array {
   $sql = "SELECT oi.*, p.name, p.image
           FROM order_items oi
@@ -56,13 +26,6 @@ function order_items_by_order(mysqli $conn, int $orderId): array {
   return $items;
 }
 
-/**
- * Get recent orders for admin dashboard
- * 
- * @param mysqli $conn - Database connection
- * @param int $limit - Maximum orders to return (default 20)
- * @return array - Array of recent orders with user info
- */
 function admin_recent_orders(mysqli $conn, int $limit = 20): array {
   $sql = "SELECT o.*, u.name AS user_name, u.email AS user_email
           FROM orders o

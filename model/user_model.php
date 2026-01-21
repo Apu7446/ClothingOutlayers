@@ -1,55 +1,17 @@
 <?php
-/**
- * ========================================
- * USER MODEL (MySQLi Procedural)
- * ========================================
- * This file contains all database queries related to users.
- * 
- * Functions:
- * - user_find_by_email(): Find user by email (for login)
- * - user_find_by_id(): Find user by ID
- * - user_create(): Create new user (registration)
- * - user_update_password(): Update user's password
- */
 declare(strict_types=1);
 
-/**
- * Find a user by their email address
- * Used during login to check if user exists
- * 
- * @param mysqli $conn - Database connection
- * @param string $email - Email to search for
- * @return array|null - User data array or null if not found
- */
 function user_find_by_email(mysqli $conn, string $email): ?array {
-  // Prepare SQL statement
   $sql = "SELECT * FROM users WHERE email = ? LIMIT 1";
   $stmt = mysqli_prepare($conn, $sql);
-  
-  // Bind parameter (s = string)
   mysqli_stmt_bind_param($stmt, "s", $email);
-  
-  // Execute query
   mysqli_stmt_execute($stmt);
-  
-  // Get result
   $result = mysqli_stmt_get_result($stmt);
   $user = mysqli_fetch_assoc($result);
-  
-  // Close statement
   mysqli_stmt_close($stmt);
-  
-  // Return user array or null
   return $user ?: null;
 }
 
-/**
- * Find a user by their ID
- * 
- * @param mysqli $conn - Database connection
- * @param int $id - User ID to search for
- * @return array|null - User data array or null if not found
- */
 function user_find_by_id(mysqli $conn, int $id): ?array {
   $sql = "SELECT id,name,email,phone,address,role,created_at,password FROM users WHERE id = ? LIMIT 1";
   $stmt = mysqli_prepare($conn, $sql);
@@ -60,21 +22,6 @@ function user_find_by_id(mysqli $conn, int $id): ?array {
   mysqli_stmt_close($stmt);
   return $user ?: null;
 }
-
-/**
- * Create a new user (Registration)
- * 
- * @param mysqli $conn - Database connection
- * @param string $name - User's full name
- * @param string $email - User's email
- * @param string $password - Plain text password (will be hashed)
- * @param string|null $phone - Phone number (optional)
- * @param string|null $address - Address (optional)
- * @return int - The new user's ID
- */
-function user_create(mysqli $conn, string $name, string $email, string $password, ?string $phone, ?string $address): int {
-  // Hash the password for security
-  $hash = password_hash($password, PASSWORD_DEFAULT);
 
   $sql = "INSERT INTO users (name,email,password,phone,address,role) VALUES (?,?,?,?,?,'customer')";
   $stmt = mysqli_prepare($conn, $sql);

@@ -1,29 +1,6 @@
 <?php
-/**
- * ========================================
- * PRODUCT CONTROLLER (MySQLi Procedural)
- * ========================================
- * This file handles all product-related operations:
- * 
- * PUBLIC Functions (anyone can access):
- * - product_home(): Show featured products on home page
- * - product_list(): Show all products with search/filter
- * - product_detail(): Show single product details
- * 
- * ADMIN Functions (admin only):
- * - admin_add_product_view(): Show add product form
- * - admin_manage_products_view(): Show all products for management
- * - admin_product_create_action(): Handle new product submission
- * - admin_product_delete_action(): Delete a product
- * - admin_product_update_action(): Update product details
- */
 declare(strict_types=1);
 
-/**
- * Display home page with featured products
- * 
- * @param mysqli $conn - Database connection
- */
 function product_home(mysqli $conn): void {
   $cartCount = cart_count($conn);
   $flash = flash_get();
@@ -34,11 +11,6 @@ function product_home(mysqli $conn): void {
   require __DIR__ . '/../view/home.php';
 }
 
-/**
- * Display products listing page
- * 
- * @param mysqli $conn - Database connection
- */
 function product_list(mysqli $conn): void {
   $cartCount = cart_count($conn);
   $flash = flash_get();
@@ -54,11 +26,6 @@ function product_list(mysqli $conn): void {
   require __DIR__ . '/../view/products.php';
 }
 
-/**
- * Display single product detail page
- * 
- * @param mysqli $conn - Database connection
- */
 function product_detail(mysqli $conn): void {
   $cartCount = cart_count($conn);
   $flash = flash_get();
@@ -69,26 +36,12 @@ function product_detail(mysqli $conn): void {
   require __DIR__ . '/../view/product_detail.php';
 }
 
-/* ========================================
-   ADMIN PRODUCT MANAGEMENT FUNCTIONS
-   ======================================== */
-
-/**
- * Display add product form (Admin)
- * 
- * @param mysqli $conn - Database connection
- */
 function admin_add_product_view(mysqli $conn): void {
   $cartCount = cart_count($conn);
   $flash = flash_get();
   require __DIR__ . '/../view/admin/add_product.php';
 }
 
-/**
- * Display all products for management (Admin)
- * 
- * @param mysqli $conn - Database connection
- */
 function admin_manage_products_view(mysqli $conn): void {
   $cartCount = cart_count($conn);
   $flash = flash_get();
@@ -96,11 +49,6 @@ function admin_manage_products_view(mysqli $conn): void {
   require __DIR__ . '/../view/admin/manage_products.php';
 }
 
-/**
- * Handle new product creation (Admin)
- * 
- * @param mysqli $conn - Database connection
- */
 function admin_product_create_action(mysqli $conn): void {
   $name = trim((string)($_POST['name'] ?? ''));
   $description = trim((string)($_POST['description'] ?? ''));
@@ -115,7 +63,6 @@ function admin_product_create_action(mysqli $conn): void {
     redirect('index.php?page=admin_add_product');
   }
 
-  // Image upload handling
   $imagePath = null;
   
   if (!empty($_FILES['image']['name'])) {
@@ -161,11 +108,6 @@ function admin_product_create_action(mysqli $conn): void {
   $_SESSION['flash'] = ['type' => 'success', 'message' => 'Product added.'];
 }
 
-/**
- * Delete a product (Admin)
- * 
- * @param mysqli $conn - Database connection
- */
 function admin_product_delete_action(mysqli $conn): void {
   $id = (int)($_POST['id'] ?? 0);
   if ($id <= 0) return;
@@ -174,11 +116,6 @@ function admin_product_delete_action(mysqli $conn): void {
   $_SESSION['flash'] = ['type' => 'success', 'message' => 'Product deleted.'];
 }
 
-/**
- * Update product basic info (Admin)
- * 
- * @param mysqli $conn - Database connection
- */
 function admin_product_update_action(mysqli $conn): void {
   $id = (int)($_POST['id'] ?? 0);
   $name = trim((string)($_POST['name'] ?? ''));
@@ -194,15 +131,6 @@ function admin_product_update_action(mysqli $conn): void {
   $_SESSION['flash'] = ['type' => 'success', 'message' => 'Product updated.'];
 }
 
-/* ========================================
-   EDIT PRODUCT (Admin/Staff Access)
-   ======================================== */
-
-/**
- * Display edit product page
- * 
- * @param mysqli $conn - Database connection
- */
 function edit_product_view(mysqli $conn): void {
   $cartCount = cart_count($conn);
   $flash = flash_get();
@@ -217,11 +145,6 @@ function edit_product_view(mysqli $conn): void {
   require __DIR__ . '/../view/edit_product.php';
 }
 
-/**
- * Process edit product form submission
- * 
- * @param mysqli $conn - Database connection
- */
 function edit_product_action(mysqli $conn): void {
   $id = (int)($_POST['product_id'] ?? 0);
   
@@ -255,7 +178,6 @@ function edit_product_action(mysqli $conn): void {
   
   product_update_full($conn, $id, $data);
   
-  // Handle image upload if provided
   if (isset($_FILES['product_image']) && $_FILES['product_image']['size'] > 0) {
     $upload_dir = __DIR__ . '/../images/products/';
     if (!is_dir($upload_dir)) {
@@ -274,15 +196,10 @@ function edit_product_action(mysqli $conn): void {
     }
   }
   
-  $_SESSION['flash'] = ['type' => 'success', 'message' => 'Product updated successfully! ✅'];
+  $_SESSION['flash'] = ['type' => 'success', 'message' => 'Product updated successfully!'];
   redirect('index.php?page=edit_product&id=' . $id);
 }
 
-/**
- * Delete a product
- * 
- * @param mysqli $conn - Database connection
- */
 function delete_product_action(mysqli $conn): void {
   $id = (int)($_GET['id'] ?? 0);
   

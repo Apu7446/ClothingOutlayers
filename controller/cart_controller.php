@@ -1,23 +1,6 @@
 <?php
-/**
- * ========================================
- * CART CONTROLLER (MySQLi Procedural)
- * ========================================
- * This file handles all shopping cart operations:
- * - View cart page
- * - Add product to cart
- * - Update cart item quantity
- * - Remove item from cart
- * 
- * All functions require user to be logged in
- */
 declare(strict_types=1);
 
-/**
- * Display the cart page
- * 
- * @param mysqli $conn - Database connection
- */
 function cart_view(mysqli $conn): void {
   $cartCount = cart_count($conn);
   $flash = flash_get();
@@ -25,7 +8,6 @@ function cart_view(mysqli $conn): void {
   $userId = (int)$_SESSION['user']['id'];
   $items = cart_get_items($conn, $userId);
 
-  // Calculate subtotal
   $subtotal = 0.0;
   foreach ($items as $it) {
     $subtotal += ((float)$it['price']) * ((int)$it['quantity']);
@@ -34,11 +16,6 @@ function cart_view(mysqli $conn): void {
   require __DIR__ . '/../view/cart.php';
 }
 
-/**
- * Add a product to cart
- * 
- * @param mysqli $conn - Database connection
- */
 function cart_add_action(mysqli $conn): void {
   if (!is_customer()) {
     $_SESSION['flash'] = ['type' => 'error', 'message' => 'Only customers can add items to cart.'];
@@ -93,11 +70,6 @@ function cart_remove_action(mysqli $conn): void {
   $_SESSION['flash'] = ['type' => 'success', 'message' => 'Item removed.'];
 }
 
-/**
- * Clear all items from cart
- * 
- * @param mysqli $conn - Database connection
- */
 function cart_clear_action(mysqli $conn): void {
   $userId = (int)$_SESSION['user']['id'];
   cart_clear($conn, $userId);
