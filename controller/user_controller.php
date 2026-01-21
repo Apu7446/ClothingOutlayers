@@ -1,40 +1,18 @@
 <?php
 declare(strict_types=1);
 
-/**
- * ========================================
- * USER CONTROLLER (MySQLi Procedural)
- * ========================================
- * This file handles all user-related actions:
- * - Login (view & action)
- * - Registration (view & action)
- * - Logout
- */
-
-/**
- * Display the login page
- * @param mysqli $conn - Database connection object
- */
 function user_login_view(mysqli $conn): void {
   $cartCount = cart_count($conn);
   $flash = flash_get();
   require __DIR__ . '/../view/login.php';
 }
 
-/**
- * Display the registration page
- * @param mysqli $conn - Database connection object
- */
 function user_register_view(mysqli $conn): void {
   $cartCount = cart_count($conn);
   $flash = flash_get();
   require __DIR__ . '/../view/register.php';
 }
 
-/**
- * Process login form submission
- * @param mysqli $conn - Database connection object
- */
 function user_login_action(mysqli $conn): void {
   $email = trim((string)($_POST['email'] ?? ''));
   $password = (string)($_POST['password'] ?? '');
@@ -133,15 +111,6 @@ function user_logout_action(): void {
   $_SESSION['flash'] = ['type' => 'success', 'message' => 'Logged out.'];
 }
 
-/* ========================================
-   CUSTOMER DASHBOARD FUNCTIONS
-   ======================================== */
-
-/**
- * Display customer dashboard/profile page
- * 
- * @param mysqli $conn - Database connection
- */
 function customer_dashboard_view(mysqli $conn): void {
   $cartCount = cart_count($conn);
   $flash = flash_get();
@@ -158,11 +127,6 @@ function customer_dashboard_view(mysqli $conn): void {
   require __DIR__ . '/../view/customer/dashboard.php';
 }
 
-/**
- * Update customer profile information
- * 
- * @param mysqli $conn - Database connection
- */
 function customer_update_profile_action(mysqli $conn): void {
   $userId = (int)$_SESSION['user']['id'];
   
@@ -184,11 +148,6 @@ function customer_update_profile_action(mysqli $conn): void {
   }
 }
 
-/**
- * Update customer profile image
- * 
- * @param mysqli $conn - Database connection
- */
 function customer_update_image_action(mysqli $conn): void {
   $userId = (int)$_SESSION['user']['id'];
   

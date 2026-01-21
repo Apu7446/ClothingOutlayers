@@ -1,27 +1,24 @@
 <?php
-// Admin Controller - Dashboard + Order Management (MySQLi Procedural)
 
+/**
+ * Get admin dashboard statistics
+ */
 function admin_dashboard_stats() {
     $conn = db();
     
     try {
-        // Total products
         $result = mysqli_query($conn, "SELECT COUNT(*) as total FROM products");
         $totalProducts = mysqli_fetch_assoc($result)['total'] ?? 0;
         
-        // Total orders
         $result = mysqli_query($conn, "SELECT COUNT(*) as total FROM orders");
         $totalOrders = mysqli_fetch_assoc($result)['total'] ?? 0;
         
-        // Pending orders
         $result = mysqli_query($conn, "SELECT COUNT(*) as total FROM orders WHERE status = 'pending'");
         $pendingOrders = mysqli_fetch_assoc($result)['total'] ?? 0;
         
-        // Total revenue
         $result = mysqli_query($conn, "SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE status IN ('confirmed', 'shipped', 'delivered')");
         $totalRevenue = mysqli_fetch_assoc($result)['total'] ?? 0;
         
-        // Recent orders
         $result = mysqli_query($conn, "SELECT o.*, u.name as customer_name FROM orders o LEFT JOIN users u ON o.user_id = u.id ORDER BY o.created_at DESC LIMIT 5");
         $recentOrders = mysqli_fetch_all($result, MYSQLI_ASSOC);
         
@@ -31,8 +28,9 @@ function admin_dashboard_stats() {
     }
 }
 
-// ============ ORDER MANAGEMENT ============
-
+/**
+ * Get order detail by ID
+ */
 function admin_order_detail() {
     $conn = db();
     
@@ -68,6 +66,9 @@ function admin_order_detail() {
     require 'view/admin/order_detail.php';
 }
 
+/**
+ * Update order status
+ */
 function admin_update_order() {
     $conn = db();
     
@@ -90,8 +91,9 @@ function admin_update_order() {
     exit;
 }
 
-// ============ CUSTOMER MANAGEMENT ============
-
+/**
+ * Get all customers with stats
+ */
 function admin_customers() {
     $conn = db();
     
@@ -112,6 +114,9 @@ function admin_customers() {
     return $customers;
 }
 
+/**
+ * Get customer detail by ID with orders
+ */
 function admin_customer_detail() {
     $conn = db();
     
@@ -147,6 +152,9 @@ function admin_customer_detail() {
     return compact('customer', 'orders');
 }
 
+/**
+ * Save customer edits
+ */
 function admin_customer_edit_save() {
     $conn = db();
     
@@ -178,6 +186,9 @@ function admin_customer_edit_save() {
     exit;
 }
 
+/**
+ * Delete customer with all related data
+ */
 function admin_customer_delete() {
     $conn = db();
     
@@ -185,22 +196,18 @@ function admin_customer_delete() {
         $customer_id = (int)($_POST['customer_id'] ?? 0);
         
         try {
-            // Delete customer's cart items
             $stmt = mysqli_prepare($conn, "DELETE FROM cart WHERE user_id = ?");
             mysqli_stmt_bind_param($stmt, "i", $customer_id);
             mysqli_stmt_execute($stmt);
             
-            // Delete customer's orders items first
             $stmt = mysqli_prepare($conn, "DELETE FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE user_id = ?)");
             mysqli_stmt_bind_param($stmt, "i", $customer_id);
             mysqli_stmt_execute($stmt);
             
-            // Delete customer's orders
             $stmt = mysqli_prepare($conn, "DELETE FROM orders WHERE user_id = ?");
             mysqli_stmt_bind_param($stmt, "i", $customer_id);
             mysqli_stmt_execute($stmt);
             
-            // Delete customer
             $stmt = mysqli_prepare($conn, "DELETE FROM users WHERE id = ? AND role = 'customer'");
             mysqli_stmt_bind_param($stmt, "i", $customer_id);
             mysqli_stmt_execute($stmt);
@@ -215,6 +222,9 @@ function admin_customer_delete() {
     exit;
 }
 
+/**
+ * Delete order with all items
+ */
 function admin_delete_order() {
     $conn = db();
     
@@ -222,12 +232,10 @@ function admin_delete_order() {
         $order_id = (int)($_POST['order_id'] ?? 0);
         
         try {
-            // Delete order items first
             $stmt = mysqli_prepare($conn, "DELETE FROM order_items WHERE order_id = ?");
             mysqli_stmt_bind_param($stmt, "i", $order_id);
             mysqli_stmt_execute($stmt);
             
-            // Delete order
             $stmt = mysqli_prepare($conn, "DELETE FROM orders WHERE id = ?");
             mysqli_stmt_bind_param($stmt, "i", $order_id);
             mysqli_stmt_execute($stmt);
@@ -242,8 +250,9 @@ function admin_delete_order() {
     exit;
 }
 
-// ============ PRODUCT MANAGEMENT ============
-
+/**
+ * Add new product
+ */
 function admin_add_product() {
     $conn = db();
     
@@ -256,7 +265,6 @@ function admin_add_product() {
         $color = $_POST['color'] ?? '';
         $description = $_POST['description'] ?? '';
         
-        // Validation
         if (empty($product_name) || empty($category) || empty($size) || empty($color) || $price <= 0) {
             $_SESSION['flash'] = ['type' => 'danger', 'message' => 'All fields are required and price must be greater than 0'];
             header('Location: index.php?page=admin_dashboard&tab=add_product');
@@ -264,7 +272,6 @@ function admin_add_product() {
         }
         
         try {
-            // Handle file upload
             $image = null;
             if (isset($_FILES['product_image']) && $_FILES['product_image']['size'] > 0) {
                 $upload_dir = __DIR__ . '/../images/products/';
@@ -275,7 +282,7 @@ function admin_add_product() {
                 $file_ext = strtolower(pathinfo($_FILES['product_image']['name'], PATHINFO_EXTENSION));
                 $allowed_ext = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
                 
-                if (in_array($file_ext, $allowed_ext) && $_FILES['product_image']['size'] < 5242880) { // 5MB
+                if (in_array($file_ext, $allowed_ext) && $_FILES['product_image']['size'] < 5242880) {
                     $new_filename = 'product_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $file_ext;
                     if (move_uploaded_file($_FILES['product_image']['tmp_name'], $upload_dir . $new_filename)) {
                         $image = 'images/products/' . $new_filename;
@@ -283,7 +290,6 @@ function admin_add_product() {
                 }
             }
             
-            // Insert product
             $stmt = mysqli_prepare($conn, "INSERT INTO products (name, description, price, size, color, category, image, stock) 
                                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
             mysqli_stmt_bind_param($stmt, "ssdssssi", $product_name, $description, $price, $size, $color, $category, $image, $stock);
@@ -299,8 +305,9 @@ function admin_add_product() {
     }
 }
 
-// ============ ADMIN RESET USER PASSWORD ============
-
+/**
+ * Reset customer password
+ */
 function admin_reset_password(): void {
     $conn = db();
     
@@ -347,8 +354,9 @@ function admin_reset_password(): void {
     exit;
 }
 
-// ============ STAFF MANAGEMENT ============
-
+/**
+ * Add new staff member
+ */
 function admin_add_staff(): void {
     $conn = db();
     
@@ -369,7 +377,6 @@ function admin_add_staff(): void {
         exit;
     }
     
-    // Check if email already exists
     $stmt = mysqli_prepare($conn, "SELECT id FROM users WHERE email = ?");
     mysqli_stmt_bind_param($stmt, "s", $email);
     mysqli_stmt_execute($stmt);
@@ -397,12 +404,18 @@ function admin_add_staff(): void {
     exit;
 }
 
+/**
+ * Get all staff members
+ */
 function admin_get_all_staff(): array {
     $conn = db();
     $result = mysqli_query($conn, "SELECT id, name, email, phone, created_at FROM users WHERE role = 'staff' ORDER BY created_at DESC");
     return mysqli_fetch_all($result, MYSQLI_ASSOC);
 }
 
+/**
+ * Delete staff member
+ */
 function admin_delete_staff(): void {
     $conn = db();
     
